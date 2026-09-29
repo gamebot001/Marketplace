@@ -1,0 +1,1183 @@
+/* ============================================================================
+   COLLECTION DETAIL — compact, minimal-premium page (scoped styles)
+   ----------------------------------------------------------------------------
+   Compositor-safe by design: only transform / opacity are animated, every glow
+   is a static gradient (no blur filters, no backdrop sampling), and no layout
+   is read per frame. Tabs swap panels with a one-shot opacity/translate, and
+   the collection footer is suppressed from the route itself (never globally).
+   ========================================================================== */
+
+.page {
+  position: relative;
+  isolation: isolate;
+  padding: 24px 0 40px;
+}
+
+/* Wider editorial shell for this route only: hero, tabs, sort and the NFT grid
+   all align to one fuller container on large screens, while staying comfortably
+   inset — never edge-to-edge. */
+.shell {
+  width: 100%;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 56px);
+}
+
+/* Collection-specific atmosphere: a soft amber crown behind the hero and a
+   restrained violet pool low-right. Pure gradients — cheap, stable, quiet. */
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.atmosphere::before {
+  content: "";
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  width: min(900px, 86vw);
+  height: 520px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    closest-side,
+    rgba(232, 161, 60, 0.09),
+    transparent 74%
+  );
+}
+.atmosphere::after {
+  content: "";
+  position: absolute;
+  top: 420px;
+  right: -200px;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(
+    closest-side,
+    rgba(139, 107, 217, 0.06),
+    transparent 74%
+  );
+}
+
+/* ============================================================================
+   HERO — compact, spacious; artwork + identity + one stat line
+   ========================================================================== */
+
+.hero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  gap: clamp(32px, 4vw, 72px);
+  align-items: center;
+  padding: 8px 0;
+  margin-bottom: 30px;
+}
+
+.heroArt {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+/* soft amber pooling behind the artwork — breathes as the cursor enters */
+.heroArt::before {
+  content: "";
+  position: absolute;
+  inset: -12% -10%;
+  background: radial-gradient(
+    58% 58% at 50% 44%,
+    rgba(232, 161, 60, 0.16),
+    transparent 70%
+  );
+  opacity: 0.7;
+  pointer-events: none;
+  transition: opacity 520ms var(--ease-lux), transform 520ms var(--ease-lux);
+}
+.heroArt:hover::before {
+  opacity: 1;
+  transform: scale(1.04);
+}
+
+.artFrame {
+  --px: 50%;
+  --py: 38%;
+  --tx: 0px;
+  --ty: 0px;
+  --glow: 0;
+  position: relative;
+  width: min(100%, 360px);
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.48),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  transition: transform 520ms var(--ease-lux), border-color 520ms var(--ease),
+    box-shadow 520ms var(--ease);
+}
+.artFrame:hover {
+  transform: translateY(-6px) scale(1.012);
+  border-color: var(--accent-line);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55),
+    0 0 46px rgba(232, 161, 60, 0.15),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+.artFrame :global(img) {
+  transform: translate(var(--tx), var(--ty)) scale(1.04);
+  transition: transform 620ms var(--ease-lux);
+}
+/* amber rim light + base falloff — static */
+.artFrame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(232, 161, 60, 0.16),
+    inset 0 -44px 64px rgba(8, 7, 5, 0.42);
+}
+/* cursor-reactive highlight — CSS vars only, masked by the circular frame */
+.artGlow {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    240px circle at var(--px) var(--py),
+    rgba(244, 182, 88, 0.2),
+    transparent 62%
+  );
+  opacity: var(--glow);
+  transition: opacity 460ms var(--ease);
+  mix-blend-mode: screen;
+}
+
+.heroInfo {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+/* faint ambient pool behind the identity block — depth, not decoration */
+.heroInfo::before {
+  content: "";
+  position: absolute;
+  inset: -28px -34px -24px -20px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    118% 86% at 0% 0%,
+    rgba(232, 161, 60, 0.07),
+    transparent 62%
+  );
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 640;
+  font-size: clamp(30px, 3.3vw, 44px);
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  color: var(--text-strong);
+}
+.title :global(.verified) svg {
+  width: 21px;
+  height: 21px;
+}
+
+.desc {
+  margin: 0;
+  font-size: clamp(14px, 1.35vw, 15.5px);
+  line-height: 1.62;
+  color: var(--muted);
+  max-width: 54ch;
+}
+
+.creatorLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.creatorLabel {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+/* compact, restrained stat row — secondary to the identity */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  margin: 6px 0 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.stat {
+  padding: 10px 14px;
+  margin: 0;
+  border-left: 1px solid var(--line);
+  transition: background 300ms var(--ease);
+}
+.stat:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+.stat:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.028),
+    transparent
+  );
+}
+.statK {
+  margin: 0;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--faint);
+}
+.statV {
+  margin: 3px 0 0;
+  font-family: var(--font-mono);
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text-strong);
+  transition: color 300ms var(--ease);
+}
+.stat:hover .statV {
+  color: var(--accent-bright);
+}
+
+.demoNote {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--faint);
+}
+
+/* ============================================================================
+   TABS — minimal, amber active state
+   ========================================================================== */
+
+.tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 34px;
+}
+.tab {
+  position: relative;
+  appearance: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0 0 14px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  transition: color 260ms var(--ease);
+}
+.tab:hover {
+  color: var(--text-strong);
+}
+.tab::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent-bright), var(--accent-deep));
+  transform: scaleX(0);
+  transform-origin: left center;
+  opacity: 0;
+  transition: transform 320ms var(--ease-lux), opacity 320ms var(--ease);
+}
+.tab[data-active="true"] {
+  color: var(--accent-bright);
+}
+.tab[data-active="true"]::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+.tab:focus-visible {
+  outline: none;
+  color: var(--accent-bright);
+}
+
+/* ============================================================================
+   PANELS
+   ========================================================================== */
+
+.panel {
+  position: relative;
+  z-index: 1;
+  padding: 0 0 90px;
+  animation: cvPanelIn 340ms var(--ease-lux) both;
+}
+
+@keyframes cvPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sectionHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+.sectionIndex {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  color: var(--faint);
+  margin-bottom: 8px;
+}
+.sectionTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-size: clamp(20px, 2.1vw, 27px);
+  letter-spacing: -0.025em;
+  color: var(--text-strong);
+}
+
+/* refined compact sort dropdown — custom control with an animated menu.
+   The menu is always mounted and toggles opacity/transform only (plus a
+   visibility flip), so opening it never shifts layout or re-mounts. */
+.sortWrap {
+  position: relative;
+  flex: none;
+  width: 236px;
+  max-width: 100%;
+}
+.sortBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  color: var(--text-strong);
+  font: inherit;
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: border-color 220ms var(--ease), background 220ms var(--ease),
+    box-shadow 220ms var(--ease);
+}
+.sortBtn:hover {
+  border-color: var(--accent-line);
+  background: var(--surface-3);
+}
+.sortBtn[aria-expanded="true"] {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.sortBtn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.sortLabel {
+  flex: none;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--faint);
+}
+.sortValue {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-strong);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sortChevron {
+  flex: none;
+  color: var(--muted);
+  transition: transform 260ms var(--ease-lux), color 220ms var(--ease);
+}
+.sortChevron[data-open="true"] {
+  transform: rotate(180deg);
+  color: var(--accent-bright);
+}
+.sortMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  width: auto;
+  min-width: 0;
+  padding: 6px;
+  display: grid;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lift);
+  transform-origin: top center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 200ms var(--ease), transform 220ms var(--ease-lux),
+    visibility 0s linear 220ms;
+}
+.sortMenu[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  transition: opacity 200ms var(--ease), transform 220ms var(--ease-lux),
+    visibility 0s;
+}
+.sortOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 180ms var(--ease), color 180ms var(--ease);
+}
+.sortOption:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-strong);
+}
+.sortOption[data-active="true"] {
+  color: var(--accent-bright);
+}
+.sortOption[data-active="true"] svg {
+  color: var(--accent);
+}
+
+/* ============================================================================
+   COLLECTIBLE GRID + CARD — artwork-first, lean metadata, smaller footprint
+   ========================================================================== */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* The card is a button (it opens the in-page overlay) — reset the control
+   chrome so it keeps the exact gallery treatment. */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 300ms var(--ease), border-color 300ms var(--ease),
+    box-shadow 300ms var(--ease), background 300ms var(--ease);
+}
+.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(232, 161, 60, 0.36);
+  background: var(--surface-2);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(232, 161, 60, 0.07);
+}
+.card:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.cardMedia {
+  --px: 50%;
+  --py: 40%;
+  --glow: 0;
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  overflow: hidden;
+  background: linear-gradient(160deg, #1b1713, #0e0c0a);
+}
+.cardMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 800ms var(--ease-lux);
+}
+.card:hover .cardMedia img {
+  transform: scale(1.04);
+}
+/* cursor illumination — driven by --px / --py, compositor friendly */
+.cardMedia::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    260px circle at var(--px) var(--py),
+    rgba(240, 196, 118, 0.12),
+    transparent 62%
+  );
+  opacity: var(--glow);
+  transition: opacity 420ms var(--ease);
+  mix-blend-mode: screen;
+}
+
+.cardChip {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  transform: scale(0.9);
+  transform-origin: top left;
+}
+
+.cardArrow {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: rgba(10, 9, 7, 0.6);
+  color: var(--text-strong);
+  opacity: 0;
+  transform: translate(4px, -4px);
+  transition: opacity 300ms var(--ease), transform 300ms var(--ease);
+}
+.card:hover .cardArrow {
+  opacity: 1;
+  transform: none;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  padding: 11px 12px 12px;
+}
+.cardName {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 560;
+  letter-spacing: -0.005em;
+  color: var(--text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 300ms var(--ease);
+}
+.card:hover .cardName {
+  color: var(--accent-bright);
+}
+.cardFoot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+.cardLabel {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+}
+.cardValue {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--text-strong);
+  transition: color 300ms var(--ease);
+}
+.card:hover .cardValue {
+  color: var(--accent-bright);
+}
+.cardStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cardStatus[data-status="active"] {
+  color: var(--accent);
+}
+.cardStatus[data-status="sold"] {
+  color: var(--positive);
+}
+
+/* ============================================================================
+   ACTIVITY — compact editorial list
+   ========================================================================== */
+
+.activity {
+  --cols: minmax(0, 1.8fr) 104px minmax(0, 1fr) minmax(0, 1fr) 68px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.activityHead {
+  display: grid;
+  grid-template-columns: var(--cols);
+  gap: 16px;
+  align-items: center;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--faint);
+}
+.activityRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  gap: 16px;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--line);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: cvFeedIn 560ms var(--ease-lux) forwards;
+  animation-delay: calc(var(--row, 0) * 60ms);
+  transition: background 260ms var(--ease);
+}
+.activityRow:last-child {
+  border-bottom: 0;
+}
+.activityRow:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.022),
+    transparent 70%
+  );
+}
+.activityRow::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 0;
+  border-radius: 1px;
+  background: var(--accent);
+  transition: height 260ms var(--ease), box-shadow 260ms var(--ease);
+}
+.activityRow:hover::before {
+  height: 56%;
+  box-shadow: 0 0 12px rgba(232, 161, 60, 0.55);
+}
+.activityRow[data-kind="sale"]::before {
+  background: var(--positive);
+}
+.activityRow[data-kind="transfer"]::before {
+  background: var(--violet);
+}
+
+@keyframes cvFeedIn {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.assetCell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.thumb {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-3);
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.assetName {
+  font-size: 13.5px;
+  font-weight: 560;
+  color: var(--text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 300ms var(--ease);
+}
+.assetName:hover {
+  color: var(--accent-bright);
+}
+/* NFT names open the in-page overlay, so the interactive variant is a button
+   that must keep the exact text treatment. */
+button.assetName {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 560;
+  text-align: left;
+  cursor: pointer;
+}
+.assetSub {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.priceCol,
+.buyerCol,
+.sellerCol {
+  white-space: nowrap;
+}
+.timeCol {
+  text-align: right;
+}
+.price {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.buyer,
+.seller {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Click-to-copy address: no visible button, a quiet "Copied" tooltip confirms. */
+.copyAddr {
+  position: relative;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 240ms var(--ease);
+}
+.copyAddr:hover {
+  color: var(--text-strong);
+}
+.copyAddr:focus-visible {
+  outline: none;
+  color: var(--accent-bright);
+}
+.copyAddr::after {
+  content: "Copied";
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  transform: translate(-50%, 4px);
+  z-index: 4;
+  padding: 3px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--text-strong);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease), transform 220ms var(--ease-lux);
+}
+.copyAddr[data-copied="true"]::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.time {
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.activityEmpty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 30px 12px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+/* ============================================================================
+   ABOUT — specs & links only (nothing already shown in the hero)
+   ========================================================================== */
+
+.facts {
+  margin: 0;
+  border-top: 1px solid var(--line);
+  max-width: 720px;
+}
+.fact {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 16px;
+  align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.factK {
+  margin: 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--faint);
+}
+.factV {
+  margin: 0;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--text-strong);
+  overflow-wrap: anywhere;
+}
+.factV a {
+  color: var(--text);
+  transition: color 260ms var(--ease);
+}
+.factV a:hover {
+  color: var(--accent-bright);
+}
+
+/* ============================================================================
+   IN-PAGE NFT OVERLAY — browse a piece without leaving the collection.
+   Rendered through the shared root overlay host (above the sticky header and
+   outside .page's stacking context). The panel animates opacity/transform only.
+   ========================================================================== */
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 1040px;
+  max-height: calc(100vh - 48px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lift);
+  animation: cvModalIn 280ms var(--ease-lux) both;
+}
+@keyframes cvModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.modalClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: rgba(10, 9, 7, 0.72);
+  color: var(--text-strong);
+  cursor: pointer;
+  transition: background 220ms var(--ease), border-color 220ms var(--ease),
+    transform 220ms var(--ease);
+}
+.modalClose:hover {
+  background: var(--surface-2);
+  border-color: var(--accent-line);
+  transform: rotate(90deg);
+}
+.modalClose:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.modalMedia {
+  position: relative;
+  min-height: 360px;
+  background: radial-gradient(120% 120% at 50% 32%, #221c15, #0e0c0a 72%);
+}
+/* Never crop or distort the piece: contain it inside the frame. The artwork
+   component defaults to cover, so override it here (overlay scoped only). */
+.modalMedia :global(img) {
+  object-fit: contain !important;
+}
+
+.modalAside {
+  min-width: 0;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 26px 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modalHead {
+  display: grid;
+  gap: 8px;
+  padding-right: 34px;
+}
+.modalTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-size: clamp(22px, 2.4vw, 30px);
+  letter-spacing: -0.025em;
+  color: var(--text-strong);
+}
+.modalPriceRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (min-width: 1500px) {
+  .grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1120px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    margin-bottom: 26px;
+  }
+  .heroArt {
+    justify-content: flex-start;
+  }
+  .artFrame {
+    width: min(100%, 260px);
+  }
+  .activity {
+    --cols: minmax(0, 1fr) 96px 64px;
+  }
+  .buyerCol,
+  .sellerCol,
+  .buyer,
+  .seller {
+    display: none;
+  }
+  .panel {
+    padding-bottom: 68px;
+  }
+  .modal {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+    overflow-y: auto;
+  }
+  .modalMedia {
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+  }
+  .modalAside {
+    max-height: none;
+    overflow: visible;
+    padding: 22px;
+  }
+}
+
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .stat {
+    border-left: 1px solid var(--line);
+  }
+  .stat:nth-child(odd) {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .stat:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+  .tabs {
+    gap: 22px;
+    margin-bottom: 26px;
+  }
+  .tab {
+    font-size: 12.5px;
+    padding-bottom: 12px;
+  }
+  .activity {
+    --cols: minmax(0, 1fr) 88px;
+  }
+  .timeCol,
+  .time {
+    display: none;
+  }
+  .activityRow {
+    gap: 10px;
+    padding: 12px 8px;
+  }
+  .activityHead {
+    gap: 10px;
+    padding: 10px 8px;
+  }
+  .fact {
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .sectionHead {
+    flex-wrap: wrap;
+  }
+  .sortWrap {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .modal {
+    animation: none;
+  }
+  .tab::after {
+    transition: none;
+  }
+  .card,
+  .cardMedia img,
+  .cardArrow,
+  .cardName,
+  .cardValue,
+  .sortChevron,
+  .sortBtn,
+  .sortMenu,
+  .sortOption,
+  .modalClose,
+  .artFrame,
+  .artFrame :global(img),
+  .artGlow,
+  .heroArt::before,
+  .stat,
+  .statV,
+  .assetName,
+  .copyAddr,
+  .copyAddr::after {
+    transition: none;
+  }
+  .artFrame:hover {
+    transform: none;
+  }
+  .heroArt:hover::before {
+    transform: none;
+  }
+}

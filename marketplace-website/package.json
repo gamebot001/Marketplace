@@ -1,0 +1,36 @@
+{
+  "name": "zecians-marketplace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zecians Marketplace — a premium, multi-collection Solana NFT marketplace. Independent from the Zecians NFT collection site.",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@solana/wallet-adapter-base": "^0.9.28",
+    "@solana/wallet-adapter-react": "^0.15.40",
+    "@solana/wallet-standard-wallet-adapter-base": "^1.1.6",
+    "@solana/wallet-standard-wallet-adapter-react": "^1.1.7",
+    "@solana/web3.js": "^1.99.0",
+    "lucide-react": "^0.468.0",
+    "next": "14.2.15",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.9",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.15",
+    "typescript": "5.5.4"
+  },
+  "overrides": {
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0"
+  }
+}

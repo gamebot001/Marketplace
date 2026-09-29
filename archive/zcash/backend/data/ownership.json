@@ -1,0 +1,21 @@
+{
+ "cursor": {
+  "last_height": 0
+ },
+ "ownership": {
+  "assets": {
+   "5": {
+    "custody": "project",
+    "knowledge_basis": "issuance_record",
+    "known_holder": "project",
+    "last_transfer": null,
+    "nft_number": 5,
+    "notes": [
+     "demo_state"
+    ]
+   }
+  },
+  "version": 1
+ },
+ "processed_keys": []
+}

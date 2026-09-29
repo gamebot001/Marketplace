@@ -1,0 +1,22 @@
+{
+  "networks": {
+    "solana-devnet": {
+      "enabled": true,
+      "chain": "solana",
+      "rpc_url": "https://api.devnet.solana.com",
+      "notes": "Default development network. Read-only RPC in this phase. No mainnet actions."
+    },
+    "solana-testnet": {
+      "enabled": true,
+      "chain": "solana",
+      "rpc_url": "https://api.testnet.solana.com",
+      "notes": "Solana testnet. Read-only usage only in this phase."
+    },
+    "solana-mainnet-beta": {
+      "enabled": false,
+      "chain": "solana",
+      "rpc_url": null,
+      "notes": "HARD-DISABLED until the owner-approved launch phase. Backend code refuses network=solana-mainnet-beta."
+    }
+  }
+}

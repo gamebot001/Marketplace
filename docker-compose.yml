@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: zecians-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-zecians}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zecians_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-zecians}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - zecians_pgdata:/var/lib/postgresql/data
+      - ./marketplace-database/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-zecians} -d ${POSTGRES_DB:-zecians}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  zecians_pgdata:

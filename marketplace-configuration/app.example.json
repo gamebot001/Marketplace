@@ -1,0 +1,20 @@
+{
+  "chain": "solana",
+  "nft_standard": "metaplex-core",
+  "features": {
+    "mint_enabled": false,
+    "marketplace_enabled": false,
+    "allowlist_enabled": false
+  },
+  "fees": {
+    "marketplace_fee_bps": 0,
+    "royalty_bps_default": 0,
+    "currency": "SOL",
+    "note": "Placeholders only. 0 bps means fees are disabled until final percentages are set. Do NOT treat these as final."
+  },
+  "limits": {
+    "mint_limit_per_address": 1,
+    "api_rate_limit_per_minute": 60
+  },
+  "notes": "Copy to app.json to customize. Defaults keep every money-touching feature OFF during the prototype phase."
+}

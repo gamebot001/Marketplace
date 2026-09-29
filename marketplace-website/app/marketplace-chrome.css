@@ -1,0 +1,3313 @@
+/* ============================================================================
+   ZECIANS MARKETPLACE — UNIFIED CHROME & HOMEPAGE STYLESHEET
+   ----------------------------------------------------------------------------
+   ONE design system for the header, footer and homepage sections. Every
+   marketplace route wears the same chrome; selectors are namespaced .mk-*
+   so they cannot collide with the shared primitives in globals.css (which
+   they deliberately reuse: tokens, .mono, .search-result, .wallet-*).
+
+   Header interaction states:
+     01 default · 02 collections hover panel · 03 search overlay ·
+     04 wallet overlay · 05 scrolled surface
+   ========================================================================== */
+
+/* ------------------------------------------------------------------
+   Shared content container — 1440px editorial width. The header has
+   its own wider 1600px container.
+   ------------------------------------------------------------------ */
+
+/* The section container deliberately shares the hero shell's metrics
+   (max-width 1280, 24px gutters) so section headings, cards and the hero
+   copy share ONE left edge on every viewport. */
+.mk-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Total chrome height (status strip + header), per breakpoint. The homepage
+   hero, the mobile drawer and the search sheet align against it. The strip
+   only renders on a devnet build ("net"); "netless" drops its 32px. */
+:root {
+  --mk-header-height: 88px;
+  --mk-network-height: 32px;
+  --mk-chrome-top: calc(var(--mk-header-height) + var(--mk-network-height));
+}
+
+@media (max-width: 860px) {
+  :root {
+    --mk-header-height: 64px;
+  }
+}
+
+html[data-chrome="netless"] {
+  --mk-network-height: 0px;
+}
+
+@media (max-width: 600px) {
+  :root {
+    --mk-header-height: 60px;
+  }
+}
+
+/* ==================================================================
+   01 · HEADER — spacious premium bar, three deliberate zones
+   ------------------------------------------------------------------
+   LEFT brand · CENTER nav · RIGHT actions. 88px tall on desktop,
+   1600px container, generous gutters. The composition earns its
+   premium feel from spacing and type hierarchy, not decoration.
+
+   ANTI-FLICKER CONTRACT (permanent):
+   · NO backdrop-filter on the header. The header is sticky and the
+     homepage hero is tucked beneath it (negative margin), so a
+     backdrop-filter here samples the entire animated page. Mounting
+     OR unmounting any fixed overlay — notifications, search, wallet —
+     (or moving the hero carousel) invalidates that full-viewport
+     backdrop snapshot and forces a whole-document re-raster, which
+     reads as a page-wide flash / blank hero card. This is the same
+     contract already applied to the notification panel below.
+   · The surface is now fully OPAQUE (solid near-black) so page content
+     can never show through while scrolling. It is still painted with a
+     plain background — never backdrop-filter — so the re-raster cost
+     described above does not apply and the flicker contract holds.
+   ================================================================== */
+
+.mk-header {
+  position: sticky;
+  top: 0;
+  height: var(--mk-header-height);
+  flex: none;
+  z-index: 80;
+  background: #0a0908;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mk-header[data-scrolled] {
+  background: #080706;
+  border-bottom-color: rgba(255, 255, 255, 0.11);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.mk-header-inner {
+  width: 100%;
+  max-width: 1600px;
+  height: 100%;
+  margin: 0 auto;
+  /* Left gutter matches the brand anchor; the right gutter is a touch
+     tighter so the notification control sits closer to the corner. */
+  padding: 0 40px 0 48px;
+  display: grid;
+  /* The nav is deliberately biased LEFT of true centre: the left track is
+     the smaller share, so the brand→nav pairing reads as one left cluster
+     while the heavier search/wallet/bell controls own the right. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 2.05fr);
+  align-items: center;
+  gap: clamp(24px, 3vw, 48px);
+}
+
+/* brand — one premium wordmark lockup, stacked */
+
+.mk-brand {
+  justify-self: start;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--text-strong);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.mk-brand span {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  line-height: 1;
+}
+
+.mk-brand em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  line-height: 1;
+}
+
+.mk-brand:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* centered navigation — optically centered, honest active state */
+
+.mk-navcenter {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.mk-nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.mk-nav a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 1px;
+  color: var(--muted);
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.22s ease;
+}
+
+/* subtle amber underline */
+.mk-nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 7px;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.9;
+  transform: scaleX(0);
+  transform-origin: 50% 50%;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* tiny indicator dot for the active page */
+.mk-nav a::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 3px;
+  height: 3px;
+  margin-left: -1.5px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  box-shadow: 0 0 6px rgba(232, 161, 60, 0.8);
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.mk-nav a:hover {
+  color: var(--text-strong);
+}
+
+.mk-nav a:hover::after {
+  transform: scaleX(0.55);
+}
+
+.mk-nav a[aria-current="page"] {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.mk-nav a[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+.mk-nav a[aria-current="page"]::before {
+  opacity: 1;
+}
+
+.mk-nav a:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Right controls retain their full width and share one 44px baseline. */
+
+.mk-navright {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mk-navright > * {
+  flex: none;
+}
+
+.mk-iconbtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: #8a8378;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.22s ease, background-color 0.22s ease,
+    color 0.22s ease;
+}
+
+.mk-iconbtn:hover,
+.mk-iconbtn[data-open],
+.mk-iconbtn[aria-expanded="true"] {
+  border-color: rgba(232, 161, 60, 0.32);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent-bright);
+}
+
+.mk-iconbtn:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 2px;
+}
+
+.mk-menu-btn {
+  display: none;
+}
+
+/* search control */
+
+.mk-searchwrap {
+  position: relative;
+}
+
+.mk-search {
+  width: clamp(180px, 16vw, 250px);
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  appearance: none;
+  transition: border-color 0.22s ease, background-color 0.22s ease,
+    color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.mk-search svg {
+  flex: none;
+  color: #817a72;
+  transition: color 0.22s ease;
+}
+
+.mk-search span {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mk-search kbd {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  color: #8a8378;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.mk-search:hover {
+  border-color: rgba(232, 161, 60, 0.32);
+  background: rgba(255, 255, 255, 0.05);
+  color: #d8d2c8;
+}
+
+.mk-search:hover svg {
+  color: var(--accent);
+}
+
+.mk-search:focus-visible {
+  outline: none;
+  border-color: rgba(232, 161, 60, 0.6);
+  box-shadow: 0 0 0 3px rgba(232, 161, 60, 0.12);
+  color: #d8d2c8;
+}
+
+/* ==================================================================
+   03 · SEARCH COMMAND PANEL — centered premium overlay
+   ================================================================== */
+
+.mk-cmd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(6, 5, 7, 0.6);
+  animation: mkOverlayIn 220ms var(--ease-lux);
+}
+
+/* Portal-local scrims paint independently of the animated 3D page. Scroll
+   containment also avoids changing body overflow or the page's geometry. */
+.mk-cmd-overlay,
+.mk-wallet-overlay {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.mk-cmd {
+  width: min(660px, calc(100vw - 40px));
+  margin: 0 auto;
+  position: relative;
+  top: clamp(96px, 13vh, 130px);
+  border-radius: 22px;
+  border: 1px solid rgba(232, 161, 60, 0.16);
+  background: linear-gradient(180deg, #151312, #0d0c0b 72%);
+  box-shadow: 0 48px 140px rgba(0, 0, 0, 0.62), 0 18px 48px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  overflow: hidden;
+  animation: mkCmdIn 250ms var(--ease-lux);
+}
+
+@keyframes mkCmdIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+.mk-cmd-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  color: var(--accent);
+}
+
+.mk-cmd-form {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.mk-cmd-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--text-strong);
+  font-family: inherit;
+  font-size: 16px;
+  letter-spacing: -0.005em;
+}
+
+.mk-cmd-input::placeholder {
+  color: #6e6862;
+}
+
+.mk-cmd-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.mk-cmd-esc {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  color: #8a8378;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 7px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.mk-cmd-body {
+  max-height: min(56vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 12px 16px;
+}
+
+/* panel typography — sections, rows, thumbs */
+
+.cmd-section {
+  display: grid;
+  gap: 6px;
+}
+
+.cmd-section + .cmd-section,
+.cmd-row-more + .cmd-section,
+.cmd-section + .cmd-row-more {
+  margin-top: 12px;
+}
+
+.cmd-section-label {
+  padding: 0 10px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #7a736b;
+}
+
+.cmd-list {
+  display: grid;
+  gap: 2px;
+}
+
+.cmd-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: background 0.18s ease;
+}
+
+.cmd-row:hover,
+.cmd-row:focus-visible {
+  background: rgba(232, 161, 60, 0.07);
+  outline: none;
+}
+
+.cmd-row:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.cmd-thumb {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+  position: relative;
+}
+
+.cmd-thumb-fallback {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(150deg, #1d1a15, #0d0c0a);
+}
+
+.cmd-rowmeta {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cmd-rowname {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cmd-rowsub {
+  font-size: 11px;
+  color: #7d766e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cmd-rowprice {
+  flex: none;
+  font-size: 12.5px;
+  color: var(--accent-bright);
+}
+
+.cmd-rowarrow {
+  flex: none;
+  display: inline-flex;
+  color: #57514b;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.cmd-row:hover .cmd-rowarrow {
+  color: var(--accent);
+  transform: translateX(2px);
+}
+
+.cmd-row-more {
+  justify-content: center;
+  gap: 7px;
+  margin-top: 8px;
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.cmd-empty {
+  padding: 26px 12px;
+  text-align: center;
+  color: #8f8880;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* small legacy search input styles reused by the mobile drawer */
+.mk-searchinput {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--text-strong);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.mk-searchinput::placeholder {
+  color: #6e6862;
+}
+
+.mk-searchinput::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* ==================================================================
+   02 · COLLECTIONS HOVER PANEL
+   ================================================================== */
+
+.mk-navpanel {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(232, 161, 60, 0.16);
+  /* ANTI-FLICKER: no backdrop-filter. This panel hangs off the sticky
+     header directly over the animated hero — a full sampling blur here
+     re-rasters the whole document on every hover (header/page flash).
+     The near-opaque surface is visually identical. */
+  background: rgba(12, 11, 15, 0.97);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  z-index: 90;
+  animation: mkDropCenter 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mk-navpanel::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -14px;
+  height: 14px;
+}
+
+.mk-navpanel-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 174px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.18s ease;
+}
+
+.mk-navpanel-item:hover {
+  background: rgba(232, 161, 60, 0.07);
+}
+
+.mk-navpanel-item:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 1px;
+}
+
+.mk-navpanel-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--accent);
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.mk-navpanel-item:hover .mk-navpanel-icon {
+  color: var(--accent-bright);
+  border-color: rgba(232, 161, 60, 0.35);
+}
+
+.mk-navpanel-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mk-navpanel-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+
+.mk-navpanel-sub {
+  font-size: 10.5px;
+  color: #7d766e;
+  white-space: nowrap;
+}
+
+.mk-navpanel-arrow {
+  margin-left: auto;
+  padding-left: 12px;
+  color: #57514b;
+  display: inline-flex;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.mk-navpanel-item:hover .mk-navpanel-arrow {
+  color: var(--accent);
+  transform: translateX(2px);
+}
+
+@keyframes mkDropCenter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ==================================================================
+   04 · ANNOUNCEMENTS — a compact panel anchored under the bell
+   ------------------------------------------------------------------
+   Portal-rendered fixed layer, positioned from the bell's viewport rect
+   (inline top/left) and RIGHT-aligned to it, so it opens on the right
+   directly beneath the notification control. It shows product
+   announcements ONLY — never trading activity — as clean vertical rows.
+   Deliberately NO backdrop.
+
+   ANTI-FLICKER CONTRACT (permanent):
+   · NO backdrop-filter on this panel. A backdrop-filtered element
+     samples everything beneath it — mounting/unmounting it over the
+     hero forces a full re-rasterization of the sampled region, which
+     read as flicker around the carousel. The 0.97-opaque surface is
+     visually identical without the sampling cost.
+   · Entrance animates opacity/transform ONLY (compositor-safe).
+   · Layer stack: page 0 · hero normal · header 80 · scroll
+     progress 96 · notification 101 · search 110 · wallet 120.
+   ================================================================== */
+
+.mk-notifwrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.mk-notif {
+  position: fixed;
+  z-index: 101; /* header 80 · notif 101 · search 110 · wallet 120 */
+  width: min(368px, calc(100vw - 32px));
+  /* Overflow stays visible so the caret can point back at the bell; the list
+     owns the scroll instead (see .mk-notif-list). */
+  padding: 10px 12px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(232, 161, 60, 0.16);
+  background: rgba(13, 12, 15, 0.97);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  animation: mkNotifIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* small caret pointing back at the bell — static, compositor-safe */
+.mk-notif::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: var(--notif-caret, 22px);
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  border-radius: 2px 0 0 0;
+  border-left: 1px solid rgba(232, 161, 60, 0.16);
+  border-top: 1px solid rgba(232, 161, 60, 0.16);
+  background: rgba(13, 12, 15, 0.97);
+}
+
+/* hidden until the layout effect has placed it — no first-paint flash */
+.mk-notif:not([data-ready]) {
+  visibility: hidden;
+  animation: none;
+}
+
+@keyframes mkNotifIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.995);
+  }
+}
+
+.mk-notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 2px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--text-strong);
+}
+
+.mk-notif-head > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.mk-notif-headnote {
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: #7a736b;
+}
+
+/* vertical announcement rows — clean, calm, never a trading feed */
+.mk-notif-list {
+  display: grid;
+  max-height: calc(100vh - var(--notif-top, 120px) - 96px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.mk-notif-list::-webkit-scrollbar {
+  display: none;
+}
+
+.mk-notif-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.22s var(--ease-lux);
+}
+
+/* hairline between rows, drawn with an inset shadow so it never shifts layout */
+.mk-notif-row + .mk-notif-row {
+  box-shadow: inset 0 1px 0 var(--line);
+}
+
+.mk-notif-row:hover {
+  background: rgba(232, 161, 60, 0.06);
+  transform: translateX(2px);
+}
+
+.mk-notif-row:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: -1px;
+}
+
+.mk-notif-rowicon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-top: 1px;
+  border-radius: 9px;
+  border: 1px solid rgba(232, 161, 60, 0.22);
+  background: rgba(232, 161, 60, 0.06);
+  color: var(--accent);
+}
+
+.mk-notif-rowbody {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.mk-notif-rowtop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  line-height: 1;
+}
+
+.mk-notif-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.mk-notif-rowtime {
+  flex: none;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: #6b655e;
+  white-space: nowrap;
+}
+
+.mk-notif-rowtitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-strong);
+}
+
+.mk-notif-rowtext {
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: #8a8378;
+}
+
+.mk-notif-rowarrow {
+  flex: none;
+  align-self: center;
+  color: #57514b;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.mk-notif-row:hover .mk-notif-rowarrow {
+  color: var(--accent);
+  transform: translate(2px, -2px);
+}
+
+.mk-notif-empty {
+  padding: 12px 10px;
+  color: #8f8880;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ==================================================================
+   04 · WALLET — centered premium connect overlay + connected menu
+   ================================================================== */
+
+/* Backdrop — the page stays visually present underneath */
+.mk-wallet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: rgba(6, 5, 7, 0.64);
+  animation: mkOverlayIn 240ms var(--ease-lux);
+}
+
+@keyframes mkOverlayIn {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Panel — premium dark surface, soft deep shadow, amber micro-accent */
+.mk-wallet-modal {
+  width: 100%;
+  max-width: 424px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 22px;
+  border: 1px solid rgba(232, 161, 60, 0.14);
+  background: linear-gradient(180deg, #141211, #0c0b0a 68%);
+  box-shadow: 0 48px 140px rgba(0, 0, 0, 0.62),
+    0 16px 44px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  animation: mkModalIn 260ms var(--ease-lux);
+}
+
+@keyframes mkModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+.mk-wallet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 26px 26px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mk-wallet-headtext {
+  display: grid;
+  gap: 7px;
+}
+
+.mk-wallet-kicker {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.mk-wallet-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
+}
+
+.mk-wallet-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.mk-wallet-close:hover {
+  border-color: rgba(232, 161, 60, 0.32);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent-bright);
+}
+
+.mk-wallet-close:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 2px;
+}
+
+.mk-wallet-body {
+  padding: 20px 26px 26px;
+  display: grid;
+  gap: 14px;
+}
+
+.mk-wallet-rows {
+  display: grid;
+  gap: 10px;
+}
+
+.mk-wallet-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 13px 16px 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.22s ease, background 0.22s ease,
+    transform 0.28s var(--ease-lux), box-shadow 0.28s ease;
+}
+
+.mk-wallet-row:hover:not(:disabled) {
+  border-color: rgba(232, 161, 60, 0.34);
+  background: rgba(232, 161, 60, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.mk-wallet-row:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 2px;
+}
+
+.mk-wallet-row:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.mk-wallet-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  flex: none;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.mk-wallet-rowmeta {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mk-wallet-rowname {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+  color: var(--text-strong);
+}
+
+.mk-wallet-rowtag {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7d766e;
+}
+
+.mk-wallet-pending {
+  font-size: 11.5px;
+  color: var(--accent);
+  flex: none;
+}
+
+.mk-wallet-rowarrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: #57514b;
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.28s ease;
+}
+
+.mk-wallet-row:hover:not(:disabled) .mk-wallet-rowarrow {
+  color: var(--accent);
+  border-color: rgba(232, 161, 60, 0.4);
+  transform: translateX(2px);
+}
+
+.mk-wallet-error {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  background: rgba(255, 107, 107, 0.08);
+  color: #ff9c9c;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.mk-wallet-note {
+  margin: 0;
+  color: #57514b;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.mk-wallet-empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 26px 12px 18px;
+  text-align: center;
+}
+
+.mk-wallet-emptymark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.mk-wallet-empty h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 650;
+  color: var(--text-strong);
+}
+
+.mk-wallet-empty p {
+  margin: 0;
+  max-width: 34ch;
+  color: #8f8880;
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+.mk-wallet-get {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 6px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(232, 161, 60, 0.32);
+  background: rgba(232, 161, 60, 0.08);
+  color: var(--accent-bright);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.mk-wallet-get:hover {
+  border-color: rgba(232, 161, 60, 0.5);
+  background: rgba(232, 161, 60, 0.14);
+}
+
+/* compact header control — ONE line, premium amber fill, never wraps */
+.mk-header .wallet-btn {
+  width: 150px;
+  min-width: 150px;
+  height: 44px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffd273, var(--accent) 58%, #e79b35);
+  color: #1a1207;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(232, 161, 60, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+}
+
+.mk-header .wallet-btn svg,
+.mk-header .wallet-btn .wallet-avatar {
+  flex: none;
+}
+
+.mk-header .wallet-btn::after {
+  display: none;
+}
+
+.mk-header .wallet-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 10px 26px rgba(232, 161, 60, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.mk-header .wallet-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.mk-header .wallet-btn:focus-visible {
+  outline: 2px solid rgba(232, 161, 60, 0.7);
+  outline-offset: 2px;
+}
+
+.mk-header .wallet-btn[data-connected="true"] {
+  color: #1a1207;
+}
+
+.mk-header .wallet-btn .wallet-avatar {
+  background: radial-gradient(circle at 32% 30%, #3a2c12, #1a1207 70%);
+  box-shadow: 0 0 0 1px rgba(26, 18, 7, 0.4);
+}
+
+/* connected-wallet menu — same panel family */
+.mk-header .panel {
+  border-radius: 14px;
+  border-color: rgba(232, 161, 60, 0.16);
+  /* ANTI-FLICKER: opaque surface, no backdrop sampling (see navpanel). */
+  background: rgba(12, 11, 15, 0.98);
+}
+
+/* bell — subtle unread dot, only rendered when there is real unread state */
+.mk-belldot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  box-shadow: 0 0 0 2.5px rgba(9, 8, 10, 0.95), 0 0 8px rgba(232, 161, 60, 0.7);
+  pointer-events: none;
+}
+
+/* ==================================================================
+   MOBILE DRAWER
+   ================================================================== */
+
+.mk-drawer {
+  position: fixed;
+  top: var(--mk-chrome-top, 120px);
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 85;
+  /* ANTI-FLICKER: opaque surface, no backdrop sampling. */
+  background: rgba(9, 8, 6, 0.98);
+  border-top: 1px solid var(--line);
+  padding: 22px var(--gutter);
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.mk-drawer-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.mk-drawer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 2px;
+  font-size: 19px;
+  font-family: var(--font-display);
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
+  transition: color var(--dur) var(--ease), padding-left var(--dur) var(--ease);
+}
+
+.mk-drawer-link:hover {
+  color: var(--text-strong);
+  padding-left: 6px;
+}
+
+.mk-drawer-link svg {
+  color: var(--faint);
+}
+
+.mk-drawer-secondary {
+  display: flex;
+  gap: 22px;
+  padding: 22px 2px;
+}
+
+.mk-drawer-secondary a {
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.mk-drawer-secondary a:hover {
+  color: var(--text-strong);
+}
+
+/* ==================================================================
+   FOOTER — the closing chapter: layered light, an oversized brand
+   signature and a refined reveal. Decorative layers are transform/
+   opacity only and clipped, so they never affect layout or flicker.
+   ================================================================== */
+
+.mk-footer {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  background:
+    radial-gradient(
+      120% 82% at 50% 0%,
+      rgba(232, 161, 60, 0.07),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #0d0c0a 0%, #090807 44%, #060505 100%);
+}
+
+/* a faint amber hairline catches the top edge, tying the footer to the product */
+.mk-footer::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  z-index: 2;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(232, 161, 60, 0.28),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* soft amber light field behind the whole footer, breathing very slowly */
+.mk-footer-light {
+  position: absolute;
+  left: 50%;
+  top: -42%;
+  width: 132vw;
+  height: 150%;
+  margin-left: -66vw;
+  pointer-events: none;
+  background: radial-gradient(
+    42% 58% at 50% 62%,
+    rgba(232, 161, 60, 0.1),
+    transparent 70%
+  );
+  will-change: transform, opacity;
+  animation: mkFooterLight 30s var(--ease) infinite alternate;
+}
+
+@keyframes mkFooterLight {
+  from {
+    opacity: 0.7;
+    transform: translate3d(-2%, 0, 0) scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(2%, -2%, 0) scale(1.06);
+  }
+}
+
+/* an elegant rim of light that drifts along the top edge */
+.mk-footer-rim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 1px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(244, 182, 88, 0.65),
+    transparent
+  );
+  will-change: transform, opacity;
+  animation: mkFooterRim 20s ease-in-out infinite;
+}
+
+@keyframes mkFooterRim {
+  0% {
+    opacity: 0;
+    transform: translate3d(-120%, 0, 0);
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(433%, 0, 0);
+  }
+}
+
+/* oversized brand signature — the closing statement, quiet and deep */
+.mk-footer-signature {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.14em;
+  z-index: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.mk-footer-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(110px, 25vw, 400px);
+  line-height: 0.8;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 226, 180, 0.1),
+    rgba(232, 161, 60, 0.035) 55%,
+    transparent 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.mk-footer-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 96px 24px 0;
+  display: grid;
+  grid-template-columns: 1.6fr repeat(3, 1fr);
+  gap: 48px 56px;
+  align-items: start;
+}
+
+.mk-footer-brand .mk-brand span {
+  font-size: 20px;
+  letter-spacing: 0.24em;
+}
+
+.mk-footer-brand p {
+  margin: 20px 0 0;
+  max-width: 36ch;
+  color: #9a938a;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.mk-footer-col h3 {
+  margin: 0 0 18px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #9a8272;
+}
+
+.mk-footer-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mk-footer-col a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.22s ease, transform 0.28s var(--ease-lux);
+}
+
+.mk-footer-col a:hover {
+  color: var(--text-strong);
+  transform: translateX(4px);
+}
+
+/* a small amber tick slides in with the link on hover */
+.mk-footer-col a::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  width: 5px;
+  height: 1px;
+  background: var(--accent);
+  transform: translateY(-50%) scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.28s var(--ease-lux);
+}
+
+.mk-footer-col a:hover::before,
+.mk-footer-col a:focus-visible::before {
+  transform: translateY(-50%) scaleX(1);
+}
+
+.mk-footer-col a:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.mk-footer-bottom {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 72px auto 0;
+  padding: 24px 24px 44px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  align-items: center;
+  justify-content: space-between;
+  color: #6f6862;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.mk-footer [data-reveal] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--rd, 0) * 80ms);
+}
+
+.mk-footer [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ==================================================================
+   HOMEPAGE — hero sits directly beneath the chrome; sections follow
+   ================================================================== */
+
+.mk-home {
+  position: relative;
+  z-index: 1;
+  overflow-x: clip;
+}
+
+/* in-page anchors (#stats, #collections…) never hide beneath the chrome */
+.mk-home [id] {
+  scroll-margin-top: 134px;
+}
+
+/* ==================================================================
+   HOMEPAGE ENVIRONMENT — a cinematic, always-alive atmosphere.
+   Layered light only: a deep warm-black wash, broad amber + violet light
+   fields, slow flowing light ribbons, soft light pools behind the key
+   sections, an occasional amber sweep, atmospheric haze, fine drifting
+   dust, grain and a vignette. Everything animates via transform/opacity
+   on its own compositor layer — no blur filters, no per-frame JS, no
+   layout impact — so it stays flicker-free under the locked architecture.
+   ================================================================== */
+
+.mk-env {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  contain: paint;
+}
+
+/* DEEP WARM-BLACK BASE — a cinematic vertical wash so the homepage reads
+   deeper and warmer than the shared page backdrop. Static, zero cost. */
+.mk-env-base {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      130% 40% at 50% 0%,
+      rgba(232, 161, 60, 0.05),
+      transparent 64%
+    ),
+    radial-gradient(
+      110% 36% at 50% 100%,
+      rgba(110, 78, 190, 0.07),
+      transparent 66%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(13, 11, 9, 0.55) 0%,
+      rgba(9, 8, 7, 0.8) 34%,
+      rgba(7, 6, 6, 0.9) 68%,
+      rgba(9, 8, 8, 0.86) 100%
+    );
+}
+
+/* FAR PLANE — broad amber key light with restrained violet/indigo
+   counter-light, drifting very slowly. Transform-only so it composites. */
+.mk-env-field {
+  position: absolute;
+  left: 50%;
+  top: -8%;
+  width: 152vw;
+  height: 118vh;
+  margin-left: -76vw;
+  will-change: transform;
+  background:
+    radial-gradient(
+      36% 40% at 63% 28%,
+      rgba(232, 161, 60, 0.12),
+      transparent 70%
+    ),
+    radial-gradient(
+      32% 38% at 24% 56%,
+      rgba(104, 74, 176, 0.12),
+      transparent 72%
+    ),
+    radial-gradient(
+      38% 44% at 86% 78%,
+      rgba(224, 127, 46, 0.07),
+      transparent 72%
+    );
+  animation: mkEnvField 68s var(--ease) infinite alternate;
+}
+
+@keyframes mkEnvField {
+  from {
+    transform: translate3d(-1.5%, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(1.8%, 1.4%, 0) scale(1.05);
+  }
+}
+
+/* FLOWING LIGHT RIBBONS — long, very soft light bands drifting over
+   minutes. Softness comes from the gradient falloff itself, never a
+   blur filter, so the layer is rasterized once and only ever moved. */
+.mk-env-ribbons {
+  position: absolute;
+  inset: 0;
+}
+
+.mk-env-ribbon {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.mk-env-ribbon-a {
+  top: 2%;
+  left: -24vw;
+  width: 104vw;
+  height: 32vh;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(232, 161, 60, 0.13),
+    transparent 74%
+  );
+  animation: mkRibbonA 78s var(--ease) infinite alternate;
+}
+
+.mk-env-ribbon-b {
+  top: 44%;
+  right: -26vw;
+  width: 112vw;
+  height: 36vh;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(108, 78, 182, 0.12),
+    transparent 76%
+  );
+  animation: mkRibbonB 96s var(--ease) infinite alternate;
+}
+
+@keyframes mkRibbonA {
+  from {
+    transform: translate3d(-3%, 1.5%, 0) rotate(-8deg) scale(1);
+  }
+  to {
+    transform: translate3d(5%, -2.5%, 0) rotate(-8deg) scale(1.12);
+  }
+}
+
+@keyframes mkRibbonB {
+  from {
+    transform: translate3d(4%, -2%, 0) rotate(7deg) scale(1.08);
+  }
+  to {
+    transform: translate3d(-5%, 2.5%, 0) rotate(7deg) scale(1);
+  }
+}
+
+/* SOFT LIGHT POOLS — one behind each key section, breathing almost
+   imperceptibly so the empty space feels intentional and lit. */
+.mk-env-pools {
+  position: absolute;
+  inset: 0;
+}
+
+.mk-env-pool {
+  position: absolute;
+  left: 50%;
+  width: 96vw;
+  height: 66vh;
+  margin-left: -48vw;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: mkPoolBreathe 24s ease-in-out infinite;
+}
+
+.mk-env-pool-featured {
+  top: 22%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(232, 161, 60, 0.09),
+    transparent 70%
+  );
+}
+
+.mk-env-pool-trending {
+  top: 45%;
+  animation-delay: -8s;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(224, 143, 60, 0.07),
+    transparent 72%
+  );
+}
+
+.mk-env-pool-creator {
+  top: 68%;
+  animation-delay: -15s;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(232, 161, 60, 0.08),
+    transparent 70%
+  );
+}
+
+@keyframes mkPoolBreathe {
+  0%,
+  100% {
+    opacity: 0.68;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(0, -1.4%, 0) scale(1.06);
+  }
+}
+
+/* ATMOSPHERIC HAZE — a static veil that softens the light into air. */
+.mk-env-haze {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      90% 38% at 50% 20%,
+      rgba(255, 226, 180, 0.035),
+      transparent 72%
+    ),
+    radial-gradient(
+      86% 42% at 50% 82%,
+      rgba(150, 120, 220, 0.03),
+      transparent 74%
+    );
+}
+
+/* very subtle floating dust — a handful of deterministic motes */
+.mk-env-dust span {
+  position: absolute;
+  border-radius: 50%;
+  background: rgb(255 226 180 / var(--dop, 0.35));
+  animation: mkDust var(--ddur, 24s) linear infinite;
+  animation-delay: var(--ddelay, 0s);
+  opacity: 0;
+}
+
+@keyframes mkDust {
+  0% {
+    transform: translate3d(0, 6vh, 0);
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--dop, 0.35);
+  }
+  82% {
+    opacity: var(--dop, 0.35);
+  }
+  100% {
+    transform: translate3d(var(--ddx, 20px), -9vh, 0);
+    opacity: 0;
+  }
+}
+
+/* FINE GRAIN — one static, tiled SVG noise texture. No animation, so it
+   is rasterized once and never touches the compositor again. */
+.mk-env-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* fine vignette keeps the edges quiet and deepens into the footer */
+.mk-env-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 88% at 50% 40%,
+      transparent 54%,
+      rgba(4, 3, 3, 0.5) 100%
+    ),
+    linear-gradient(180deg, transparent 80%, rgba(4, 3, 3, 0.5) 100%);
+}
+
+/* MARKET PULSE — a quiet editorial metric row, not a band. Transparent
+   surface, no borders, centred, delicate hairline separators. Replaces the
+   previous full-width stats bar. */
+.mk-pulse {
+  position: relative;
+  z-index: 1;
+  padding: 4px 0 18px;
+}
+
+.mk-pulse-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.mk-pulse-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--accent);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.mk-pulse-kicker::before,
+.mk-pulse-kicker::after {
+  content: "";
+  width: 30px;
+  height: 1px;
+  transform: scaleX(0);
+  transition: transform 0.8s var(--ease-lux) 0.1s;
+}
+
+.mk-pulse-kicker::before {
+  background: linear-gradient(90deg, transparent, var(--accent-line));
+  transform-origin: left center;
+}
+
+.mk-pulse-kicker::after {
+  background: linear-gradient(270deg, transparent, var(--accent-line));
+  transform-origin: right center;
+}
+
+.mk-pulse.is-in .mk-pulse-kicker::before,
+.mk-pulse.is-in .mk-pulse-kicker::after {
+  transform: scaleX(1);
+}
+
+.mk-pulse-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.mk-pulse-cell {
+  position: relative;
+  padding: 0 48px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.7s var(--ease-lux), transform 0.7s var(--ease-lux);
+  transition-delay: calc(var(--sd, 0) * 90ms);
+}
+
+.mk-pulse.is-in .mk-pulse-cell {
+  opacity: 1;
+  transform: none;
+}
+
+/* short hairline separators that never span the full height */
+.mk-pulse-cell + .mk-pulse-cell::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1px;
+  height: 34px;
+  transform: translateY(-50%);
+  background: linear-gradient(180deg, transparent, var(--line), transparent);
+}
+
+.mk-pulse-cell strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 620;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-pulse-label {
+  display: block;
+  margin-top: 10px;
+  color: #7a736b;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-pulse-cell {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* shared section rhythm */
+
+.mk-section {
+  padding: 72px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.mk-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.mk-section-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  color: var(--text-strong);
+}
+
+.mk-section-head p {
+  margin: 8px 0 0;
+  color: #7d766e;
+  font-size: 13px;
+}
+
+.mk-section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding-bottom: 4px;
+  color: var(--accent);
+  font-size: 12.5px;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.mk-section-link:hover {
+  color: var(--accent-bright);
+  border-bottom-color: rgba(232, 161, 60, 0.45);
+}
+
+.mk-section-link:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* the arrow eases up-and-out on hover — a small, compositor-only cue */
+.mk-section-link svg {
+  transition: transform 0.3s var(--ease-lux);
+}
+.mk-section-link:hover svg,
+.mk-section-link:focus-visible svg {
+  transform: translate(2px, -2px);
+}
+
+.mk-section [data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--rd, 0) * 70ms);
+}
+
+.mk-section [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* featured collections — Minimal Art-Director: an editorial head ruled off
+   from one continuous line of circular PFPs. Identity only (PFP + name +
+   verification) — no cards, no floor/supply/stats. */
+
+.mk-section-featured {
+  padding-top: 44px;
+  padding-bottom: 40px;
+}
+
+/* subtle amber atmosphere pooled beneath the rail — static, no animation */
+.mk-section-featured::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    62% 56% at 50% 48%,
+    rgba(232, 161, 60, 0.075),
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mk-section-featured .mk-container,
+.mk-section-featured .mk-marquee {
+  position: relative;
+  z-index: 1;
+}
+
+.mk-featured-head {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.mk-featured-head .mk-kicker {
+  margin-bottom: 14px;
+}
+
+/* the accent rule draws in with the head once it scrolls into view */
+.mk-featured-head.is-in .mk-kicker::before {
+  transform: scaleX(1);
+}
+
+/* featured collections — curated marquee showcase.
+   Identity only: PFP + name + verification. The rail drifts continuously,
+   pauses on hover, and hands focus to the hovered collection. */
+
+.mk-marquee {
+  --fp: 88px;
+  --iw: 132px;
+  --gap: 26px;
+  overflow: hidden;
+  margin-top: 24px;
+  padding: 20px 0 30px;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.mk-marquee-track {
+  position: relative;
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: mkMarquee var(--marquee-dur, 20s) linear infinite;
+}
+
+/* the very thin hairline running through every PFP (passes behind the art) */
+.mk-marquee-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--fp) / 2);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(232, 161, 60, 0.12),
+    var(--accent-line) 10%,
+    var(--accent-line) 90%,
+    rgba(232, 161, 60, 0.12)
+  );
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.mk-marquee:hover .mk-marquee-track {
+  animation-play-state: paused;
+}
+
+.mk-marquee-set {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap);
+  padding-right: var(--gap);
+}
+
+/* amber glowing dots — a separate, non-transformed layer sitting on the
+   connecting line, so a hovered PFP can lift/scale without dragging them. */
+.mk-marquee-set::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--fp) / 2 + 0.5px);
+  height: 12px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(
+    circle at calc(var(--iw) + var(--gap) / 2) 50%,
+    var(--accent) 0 1.5px,
+    rgba(232, 161, 60, 0.55) 1.5px 2.3px,
+    rgba(232, 161, 60, 0) 4.5px
+  );
+  background-size: calc(var(--iw) + var(--gap)) 12px;
+  background-repeat: repeat-x;
+}
+
+@keyframes mkMarquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.mk-featured-item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: var(--iw);
+  padding: 0;
+  border: 0;
+  background: none;
+  text-decoration: none;
+  transition: opacity 0.4s ease, transform 0.45s var(--ease-lux);
+}
+
+/* rail focus: every other collection recedes, the hovered one steps forward.
+   Dimming lives on the artwork/name only — never on the opaque circular
+   surface — so the connecting line can never bleed through a PFP. */
+.mk-marquee:hover .mk-featured-item:not(:hover) .mk-featured-pfp img,
+.mk-marquee:hover .mk-featured-item:not(:hover) .mk-featured-pfp .mk-art-fallback {
+  filter: brightness(0.45) saturate(0.85);
+}
+
+.mk-marquee:hover .mk-featured-item:not(:hover) .mk-featured-name {
+  opacity: 0.45;
+}
+
+.mk-marquee .mk-featured-item:hover {
+  transform: translateY(-3px);
+}
+
+.mk-featured-item:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 6px;
+  border-radius: 14px;
+}
+
+.mk-featured-pfp {
+  width: var(--fp);
+  height: var(--fp);
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: var(--surface-3);
+  background-image: radial-gradient(
+    circle at 50% 36%,
+    rgba(232, 161, 60, 0.12),
+    rgba(232, 161, 60, 0) 62%
+  );
+  transition: border-color 0.35s ease, box-shadow 0.45s ease;
+}
+
+.mk-featured-pfp img,
+.mk-featured-pfp .mk-art-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s var(--ease-lux), filter 0.4s ease;
+}
+
+.mk-featured-item:hover .mk-featured-pfp {
+  border-color: rgba(232, 161, 60, 0.5);
+  box-shadow: 0 0 0 1px rgba(232, 161, 60, 0.16),
+    0 0 34px rgba(232, 161, 60, 0.22);
+}
+
+.mk-featured-item:hover .mk-featured-pfp img {
+  transform: scale(1.06);
+  filter: brightness(1.08);
+}
+
+.mk-featured-name {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 128px;
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #b7b0a6;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: color 0.3s ease, opacity 0.3s ease;
+}
+
+.mk-featured-name svg {
+  color: var(--accent);
+  flex: none;
+}
+
+.mk-featured-item:hover .mk-featured-name {
+  color: #fff;
+}
+
+/* trending NFTs — Centered Showcase: a centred editorial head over one clean
+   row of artwork-first cards. Circular side arrows step the rail by one card,
+   the card nearest the showcase centre carries a subtle amber highlight and a
+   thin hairline tracks the position. Fully stateless — scrolling, highlight
+   and progress are direct DOM writes, so nothing remounts or flickers. */
+
+.mk-section-trending {
+  padding-top: 36px;
+  padding-bottom: 60px;
+}
+
+/* featured → trending: a single, centred hairline that fades at both ends, so
+   the two rails read as one composed page rather than an abrupt cut. */
+.mk-section-trending::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(760px, 74%);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--line) 20%,
+    var(--line) 80%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* a soft amber depth pool behind the row — static, gives the shelf presence
+   without adding height */
+.mk-section-trending::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    54% 48% at 50% 60%,
+    rgba(232, 161, 60, 0.055),
+    transparent 72%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* the heading and its rail read as one centred, symmetric unit */
+.mk-section-head.mk-trending-head {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.mk-section-head.mk-trending-head p {
+  margin-top: 6px;
+}
+
+.mk-trending-stage {
+  position: relative;
+  z-index: 1;
+}
+
+.mk-rail {
+  display: flex;
+  gap: 18px;
+  padding: 4px 0 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.mk-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.mk-rail-card {
+  position: relative;
+  flex: 0 0 calc((100% - 72px) / 5);
+  min-width: 0;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(21, 19, 16, 0.92), rgba(11, 10, 9, 0.94));
+  text-decoration: none;
+  transition: transform 0.32s var(--ease-lux), border-color 0.32s ease,
+    box-shadow 0.4s ease;
+}
+
+.mk-rail-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(232, 161, 60, 0.42);
+  box-shadow: 0 22px 52px rgba(0, 0, 0, 0.52), 0 0 42px rgba(232, 161, 60, 0.1);
+}
+
+/* the card nearest the centre of the showcase */
+.mk-rail-card.is-active {
+  border-color: rgba(232, 161, 60, 0.5);
+  box-shadow: 0 0 0 1px rgba(232, 161, 60, 0.15),
+    0 18px 44px rgba(0, 0, 0, 0.48), 0 0 34px rgba(232, 161, 60, 0.14);
+}
+
+.mk-rail-card.is-active .mk-rail-name {
+  color: #fff;
+}
+
+.mk-rail-card:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 2px;
+}
+
+/* floating side navigation — a refined control: thin outline, a subtle
+   glass-dark surface with a top sheen, a soft amber glow on hover, a small
+   directional drift and pressed feedback. Transform/opacity only; no
+   backdrop-filter (that would re-raster over the moving rail). */
+.mk-rail-nav {
+  position: absolute;
+  top: 37%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    radial-gradient(
+      120% 120% at 50% 0%,
+      rgba(255, 255, 255, 0.06),
+      transparent 60%
+    ),
+    rgba(13, 12, 10, 0.84);
+  color: var(--text-strong);
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 26px rgba(0, 0, 0, 0.42);
+  transition: border-color 0.3s ease, color 0.3s ease, background 0.3s ease,
+    box-shadow 0.35s ease, opacity 0.3s ease, transform 0.35s var(--ease-lux);
+}
+
+.mk-rail-nav svg {
+  display: block;
+}
+
+.mk-rail-nav:hover:not(:disabled) {
+  border-color: rgba(232, 161, 60, 0.5);
+  color: var(--accent-bright);
+  background:
+    radial-gradient(
+      120% 120% at 50% 0%,
+      rgba(232, 161, 60, 0.14),
+      transparent 62%
+    ),
+    rgba(24, 20, 16, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 16px 36px rgba(0, 0, 0, 0.5),
+    0 0 26px rgba(232, 161, 60, 0.2);
+}
+
+.mk-rail-nav:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 3px;
+}
+
+.mk-rail-nav:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.mk-rail-nav-prev {
+  left: 0;
+  transform: translate(-50%, -50%);
+}
+
+.mk-rail-nav-next {
+  right: 0;
+  transform: translate(50%, -50%);
+}
+
+.mk-rail-nav-prev:hover:not(:disabled) {
+  transform: translate(-50%, -50%) translateX(-3px);
+}
+
+.mk-rail-nav-next:hover:not(:disabled) {
+  transform: translate(50%, -50%) translateX(3px);
+}
+
+.mk-rail-nav-prev:active:not(:disabled) {
+  transform: translate(-50%, -50%) scale(0.94);
+}
+
+.mk-rail-nav-next:active:not(:disabled) {
+  transform: translate(50%, -50%) scale(0.94);
+}
+
+/* artwork leads the card */
+.mk-rail-art {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: linear-gradient(160deg, #1b1713, #0e0c0a);
+}
+
+.mk-rail-art img,
+.mk-rail-art .mk-art-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s var(--ease-lux), filter 0.4s ease;
+}
+
+.mk-rail-card:hover .mk-rail-art img {
+  transform: scale(1.06);
+  filter: brightness(1.06);
+}
+
+.mk-rail-body {
+  display: grid;
+  gap: 4px;
+  padding: 13px 15px 15px;
+  min-width: 0;
+}
+
+.mk-rail-name {
+  font-family: var(--font-display);
+  font-size: 14.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.25s ease;
+}
+
+.mk-rail-card:hover .mk-rail-name {
+  color: #fff;
+}
+
+.mk-rail-coll {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8a8378;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mk-rail-price {
+  margin-top: 5px;
+  font-size: 13px;
+  color: var(--accent-bright);
+}
+
+/* thin position / progress indicator below the row */
+.mk-rail-progress {
+  position: relative;
+  width: min(260px, 46%);
+  height: 2px;
+  margin: 22px auto 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.mk-rail-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-grad);
+  transition: left 0.2s var(--ease-lux), width 0.2s var(--ease-lux);
+}
+
+.mk-trending-viewall {
+  margin: 0;
+}
+
+/* Roomier rails — on wide desktops the featured marquee and the trending row
+   live in a wider container than the standard 1280 shell so the artwork reaches
+   closer to the page edges, while a comfortable premium gutter always remains
+   (never full-bleed). The side arrows stay anchored to the content edge and
+   float just over the rail. Gated to wide viewports so narrower screens keep
+   their existing gutters and arrow placement. */
+@media (min-width: 1361px) {
+  .mk-section-featured .mk-container,
+  .mk-section-trending .mk-container {
+    max-width: 1444px;
+    padding-left: clamp(22px, 1.9vw, 30px);
+    padding-right: clamp(22px, 1.9vw, 30px);
+  }
+}
+
+/* staggered entrance once the rail scrolls into view, then hover takes over */
+.mk-rail:not(.is-in) .mk-rail-card {
+  opacity: 0;
+}
+
+.mk-rail.is-in .mk-rail-card {
+  animation: mkRailIn 0.55s var(--ease-lux) backwards;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+@keyframes mkRailIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+/* creator section — minimal-classic editorial closing statement. An OPEN
+   composition (no enclosing card): copy left, floating layered artwork right.
+   Depth comes from the stacked pieces themselves — overlap, rotation and soft
+   shadows; motion from slow float, cursor parallax (CSS vars), a staggered
+   reveal and a hover lift. */
+
+.mk-section-creator {
+  position: relative;
+  padding-top: 84px;
+  padding-bottom: 96px;
+}
+
+/* a soft ambient pool behind the artwork column — light, not a surface */
+.mk-section-creator::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    46% 54% at 74% 50%,
+    rgba(232, 161, 60, 0.07),
+    transparent 72%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* open two-column editorial grid — symmetric halves, generous gap */
+.mk-creator {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(44px, 4.6vw, 76px);
+  align-items: center;
+}
+
+.mk-creator-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 520px;
+}
+
+.mk-creator-cta {
+  display: inline-flex;
+}
+
+.mk-kicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--accent);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.mk-kicker::before {
+  content: "";
+  width: 25px;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.85s var(--ease-lux) 0.15s;
+}
+
+/* the accent rule draws in with the kicker once it scrolls into view */
+.mk-creator-copy .mk-kicker.is-in::before {
+  transform: scaleX(1);
+}
+
+.mk-creator-copy h2 {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 3.7vw, 54px);
+  font-weight: 650;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+  margin: 0 0 20px;
+  color: var(--text-strong);
+  text-wrap: balance;
+}
+
+.mk-creator-copy p {
+  color: #948c83;
+  max-width: 42ch;
+  line-height: 1.72;
+  margin: 0 0 32px;
+  font-size: 15px;
+}
+
+.mk-primary-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 20px;
+  border-radius: 11px;
+  overflow: hidden;
+  isolation: isolate;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  background: linear-gradient(180deg, #ffd474, #e7a440);
+  color: #1b1308;
+  box-shadow: 0 12px 34px rgba(232, 161, 60, 0.14);
+  transition: transform 0.24s ease, box-shadow 0.24s ease, filter 0.24s ease;
+}
+
+/* a single luxe light sweep across the amber face on hover — transform and
+   opacity only, clipped to the button, never touching the page behind it */
+.mk-primary-btn::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -55%;
+  width: 42%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mk-primary-btn:hover::after,
+.mk-primary-btn:focus-visible::after {
+  animation: mkSheen 0.9s var(--ease-lux);
+}
+
+@keyframes mkSheen {
+  0% {
+    opacity: 0;
+    transform: translateX(0) skewX(-18deg);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(340%) skewX(-18deg);
+  }
+}
+
+.mk-primary-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 16px 40px rgba(232, 161, 60, 0.22);
+}
+
+.mk-primary-btn:focus-visible {
+  outline: 2px solid rgba(232, 161, 60, 0.7);
+  outline-offset: 3px;
+}
+
+/* layered collage stage */
+
+.mk-creator-stage {
+  position: relative;
+  min-height: 480px;
+}
+
+.mk-collage-halo {
+  position: absolute;
+  inset: 6% 4% 10%;
+  background: radial-gradient(
+    closest-side,
+    rgba(232, 161, 60, 0.11),
+    transparent 72%
+  );
+  filter: blur(28px);
+  pointer-events: none;
+}
+
+.mk-collage-pos {
+  position: absolute;
+  /* cursor parallax composes with the float animation via the individual
+     `translate` property — depth is per-item via --depth */
+  translate: calc(var(--ppx, 0px) * var(--depth, 0))
+    calc(var(--ppy, 0px) * var(--depth, 0));
+  animation: mkFloat 9s var(--ease) infinite alternate;
+  animation-delay: var(--fd, 0s);
+}
+
+@keyframes mkFloat {
+  from {
+    transform: translateY(-5px);
+  }
+  to {
+    transform: translateY(6px);
+  }
+}
+
+.mk-collage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--surface-3);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55),
+    0 10px 26px rgba(0, 0, 0, 0.4), 0 0 40px rgba(232, 161, 60, 0.08);
+  /* layered entrance — each layer rises with staggered depth, then hands
+     over to the hover transition (fill: backwards keeps hover free) */
+  opacity: 0;
+  transform: rotate(var(--rot, 0deg)) translateY(26px) scale(0.96);
+  transition: transform 0.4s var(--ease-lux), border-color 0.3s ease,
+    box-shadow 0.4s ease;
+}
+
+.mk-creator-stage.is-in .mk-collage {
+  opacity: 1;
+  transform: rotate(var(--rot, 0deg));
+  animation: mkCollageIn 0.8s var(--ease-lux) backwards;
+  animation-delay: calc(var(--cd, 0) * 120ms);
+}
+
+@keyframes mkCollageIn {
+  from {
+    opacity: 0;
+    transform: rotate(var(--rot, 0deg)) translateY(26px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--rot, 0deg)) translateY(0) scale(1);
+  }
+}
+
+.mk-collage:hover {
+  transform: rotate(var(--rot, 0deg)) translateY(-7px) scale(1.014);
+  border-color: rgba(232, 161, 60, 0.45);
+  box-shadow: 0 36px 84px rgba(0, 0, 0, 0.6),
+    0 12px 30px rgba(0, 0, 0, 0.42), 0 0 56px rgba(232, 161, 60, 0.16);
+}
+
+.mk-collage:focus-visible {
+  outline: 1px solid var(--accent-line);
+  outline-offset: 3px;
+}
+
+.mk-collage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: filter 0.35s ease;
+}
+
+.mk-collage:hover img {
+  filter: brightness(1.06);
+}
+
+/* composition: one dominant piece + three supporting, elegant overlap */
+
+.mk-collage-pos-0 {
+  left: 0;
+  top: 10%;
+  width: 51%;
+  z-index: 3;
+  --depth: 1.5;
+  --rot: -3deg;
+  --fd: -2s;
+}
+
+/* the dominant piece carries the deepest shadow */
+.mk-collage-pos-0 .mk-collage {
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.6),
+    0 14px 34px rgba(0, 0, 0, 0.44), 0 0 48px rgba(232, 161, 60, 0.1);
+}
+
+.mk-collage-pos-1 {
+  right: 7%;
+  top: 0;
+  width: 33%;
+  z-index: 2;
+  --depth: 0.8;
+  --rot: 2.4deg;
+  --fd: -4.5s;
+}
+
+.mk-collage-pos-2 {
+  right: 0;
+  top: 40%;
+  width: 30%;
+  z-index: 4;
+  --depth: 2;
+  --rot: -2deg;
+  --fd: -1s;
+}
+
+.mk-collage-pos-3 {
+  left: 35%;
+  bottom: 0;
+  width: 29%;
+  z-index: 2;
+  --depth: 0.5;
+  --rot: 3.2deg;
+  --fd: -6.5s;
+}
+
+.mk-collage-caption {
+  position: absolute;
+  left: 2px;
+  bottom: -34px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.mk-creator-art-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--faint);
+  font-size: 12.5px;
+}
+
+.mk-art-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(150deg, #17151c, #0b0a0e);
+}
+
+/* ==================================================================
+   RESPONSIVE
+   ================================================================== */
+
+@media (max-width: 1440px) {
+  .mk-container {
+    padding: 0 24px;
+  }
+}
+
+@media (max-width: 1360px) {
+  .mk-header-inner {
+    padding: 0 30px 0 40px;
+    gap: 22px;
+  }
+  .mk-nav {
+    gap: 28px;
+  }
+  .mk-search {
+    width: 170px;
+  }
+  .mk-navright {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 1240px) {
+  .mk-header-inner {
+    padding: 0 24px 0 32px;
+    gap: 18px;
+  }
+  .mk-search {
+    width: 140px;
+  }
+  .mk-nav {
+    gap: 24px;
+  }
+  .mk-navright {
+    gap: 10px;
+  }
+  .mk-container {
+    padding: 0 24px;
+  }
+  .mk-footer-inner,
+  .mk-footer-bottom {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+/* Below this width the search field can no longer sit beside the centered
+   nav without crowding it — collapse to an icon button (same command
+   overlay), keeping the header balanced. */
+@media (max-width: 1180px) {
+  .mk-search {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+  .mk-search span,
+  .mk-search kbd {
+    display: none;
+  }
+}
+
+/* Narrow viewports: the tray stays one row of chips and scrolls sideways
+   instead of growing taller (the panel is hidden under 600px anyway). */
+/* Narrower viewports get a tidy 2×2 metric grid instead of a ragged wrap. */
+@media (max-width: 700px) {
+  .mk-pulse-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 0;
+    width: min(100%, 420px);
+  }
+  .mk-pulse-cell {
+    padding: 0 14px;
+  }
+  .mk-pulse-cell strong {
+    font-size: 24px;
+  }
+  /* only the second column keeps its hairline separator */
+  .mk-pulse-cell:nth-child(odd)::before {
+    display: none;
+  }
+}
+
+/* Narrower viewports simply get a narrower rail window — the rail scrolls
+   sideways and never grows taller (the bell/panel are hidden under 600px). */
+@media (max-width: 1120px) {
+  .mk-header-inner {
+    grid-template-columns: 1fr auto;
+  }
+  .mk-navcenter {
+    display: none;
+  }
+  .mk-menu-btn {
+    display: inline-flex;
+  }
+  .mk-drawer {
+    display: flex;
+  }
+}
+
+@media (max-width: 1040px) {
+  /* tablet: quieter atmosphere, four cards in the showcase row */
+  .mk-env-field {
+    opacity: 0.8;
+  }
+  .mk-env-ribbon {
+    opacity: 0.38;
+  }
+  .mk-rail-card {
+    flex-basis: calc((100% - 54px) / 4);
+  }
+  .mk-creator {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .mk-creator-stage {
+    min-height: 420px;
+    max-width: 560px;
+  }
+  .mk-footer-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+  .mk-footer-brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  /* smaller tablets: three cards in the showcase row */
+  .mk-rail-card {
+    flex-basis: calc((100% - 36px) / 3);
+  }
+}
+
+@media (max-width: 860px) {
+  .mk-header-inner {
+    gap: 12px;
+  }
+  .mk-navright {
+    gap: 14px;
+  }
+  .mk-search {
+    display: none;
+  }
+  .mk-brand span {
+    font-size: 16px;
+  }
+  .mk-brand em {
+    font-size: 8px;
+  }
+  .mk-section {
+    padding: 56px 0;
+  }
+  .mk-section-featured {
+    padding-top: 32px;
+    padding-bottom: 32px;
+  }
+  .mk-section-trending {
+    padding-top: 30px;
+    padding-bottom: 48px;
+  }
+  .mk-section-creator {
+    padding-top: 64px;
+    padding-bottom: 72px;
+  }
+  .mk-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .mk-pulse-cell {
+    padding: 0 30px;
+  }
+  .mk-featured-item {
+    width: var(--iw);
+    gap: 12px;
+  }
+  .mk-featured-name {
+    max-width: 108px;
+    font-size: 12.5px;
+  }
+  .mk-marquee {
+    --fp: 74px;
+    --iw: 112px;
+    margin-top: 20px;
+    padding: 16px 0 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .mk-container {
+    padding: 0 24px;
+  }
+  .mk-header-inner {
+    padding: 0 18px 0 24px;
+  }
+  .mk-brand em {
+    display: none;
+  }
+  .mk-notifwrap {
+    display: none;
+  }
+  .mk-footer-inner,
+  .mk-footer-bottom {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .mk-footer-inner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding-top: 72px;
+  }
+  .mk-footer-bottom {
+    flex-direction: column;
+    margin-top: 40px;
+  }
+  .mk-footer-wordmark {
+    font-size: clamp(76px, 22vw, 130px);
+  }
+  .mk-creator {
+    gap: 32px;
+  }
+  .mk-creator-stage {
+    min-height: 340px;
+  }
+  .mk-collage-caption {
+    bottom: -26px;
+  }
+  .mk-section-head h2 {
+    font-size: 30px;
+  }
+  .mk-rail {
+    gap: 14px;
+  }
+  .mk-rail-card {
+    flex-basis: calc((100% - 14px) / 2);
+  }
+  .mk-rail-body {
+    padding: 11px 13px 13px;
+  }
+  .mk-rail-nav {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 400px) {
+  .mk-header .mk-brand span {
+    font-size: 14px;
+    letter-spacing: 0.18em;
+  }
+  .mk-navright {
+    gap: 10px;
+  }
+  .mk-header .wallet-btn {
+    width: auto;
+    min-width: 0;
+    padding: 0 12px;
+    font-size: 12px;
+    gap: 6px;
+  }
+  .mk-iconbtn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* ==================================================================
+   OVERLAY COMPOSITING / ENVIRONMENT FREEZE
+   ------------------------------------------------------------------
+   Every portaled overlay (wallet, search, notifications, mobile drawer)
+   sits directly above the animated homepage/hero environment. Two rules
+   keep that safe:
+
+   1. Each overlay panel is promoted to its own compositor layer. Without
+      one, the continuously animating stage beneath invalidates the shared
+      layer and forces the panel to re-raster — the overlay flicker seen
+      while the carousel swipes underneath an open popup.
+   2. While any overlay is open (OverlayHostSentinel flags the document),
+      the page's CSS-animated environment is paused. A frozen page behind
+      a translucent scrim composites once instead of every frame, so no
+      background animation can flash through the overlay. JS-driven hero
+      motion is unaffected; this only suspends CSS keyframe ambience.
+   ================================================================== */
+
+.mk-cmd-overlay,
+.mk-wallet-overlay {
+  will-change: opacity;
+}
+
+.mk-cmd,
+.mk-wallet-modal,
+.mk-notif,
+.mk-drawer {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+html[data-overlay-open] .mk-home *,
+html[data-overlay-open] .mk-home *::before,
+html[data-overlay-open] .mk-home *::after,
+html[data-overlay-open] .atmosphere *,
+html[data-overlay-open] .atmosphere *::before,
+html[data-overlay-open] .atmosphere *::after {
+  animation-play-state: paused !important;
+}
+
+/* ==================================================================
+   REDUCED MOTION
+   ================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-header,
+  .mk-header *,
+  #marketplace-overlays *,
+  .mk-footer *,
+  .mk-home *,
+  .mk-home *::before,
+  .mk-home *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .mk-section [data-reveal],
+  .mk-footer [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* the marquee stops entirely */
+  .mk-marquee-track {
+    animation: none;
+  }
+
+  /* rail cards are always present (no staggered entrance) */
+  .mk-rail:not(.is-in) .mk-rail-card {
+    opacity: 1;
+  }
+
+  /* the creator accent rule stays fully drawn */
+  .mk-kicker::before,
+  .mk-pulse-kicker::before,
+  .mk-pulse-kicker::after {
+    transform: scaleX(1) !important;
+  }
+}

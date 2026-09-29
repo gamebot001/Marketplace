@@ -1,0 +1,28 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+marketplace-website/.next/
+marketplace-website/out/
+
+# Environment & secrets (never commit)
+.env
+.env.local
+*.pem
+wallet.json
+*seed*
+
+# Runtime data stores (JSON stores used before PostgreSQL is wired)
+marketplace_backend/data/*.json
+marketplace_backend/data/*.lock
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

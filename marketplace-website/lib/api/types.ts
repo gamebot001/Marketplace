@@ -82,6 +82,14 @@ export interface MarketplaceCollection {
   website?: string | null;
   socials?: Record<string, string>;
   supply?: number | null;
+  /** Unique holders — a real marketplace metric; null until the backend reports it. */
+  owners?: number | null;
+  /* Per-metric 24h change (percent). Real values only — each field is null
+     until the backend reports it, and the UI shows "—" in the meantime. */
+  floor_change_24h?: number | null;
+  volume_change_24h?: number | null;
+  sales_change_24h?: number | null;
+  listed_change_24h?: number | null;
   flagship?: boolean;
   collection_id?: string;
 }

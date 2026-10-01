@@ -15,6 +15,7 @@ import { activityLabel, buildListingViews } from "@/lib/marketplace/views";
 import { formatSol, relativeTime, shorten } from "@/lib/format";
 import { explorerTxUrl } from "@/lib/solana/cluster";
 import { DEMO_MODE } from "@/lib/demo-marketplace-data";
+import { useNftQuickView } from "@/components/marketplace/nft-quick-view";
 import { Artwork } from "@/components/ui/artwork";
 import { Address } from "@/components/ui/address";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
@@ -40,6 +41,7 @@ function actionKind(type: string | null | undefined): string | undefined {
 export function ActivityTable() {
   const { data: events, error, loading } = useActivity(200);
   const meta = useListingsWithAssets({ status: null });
+  const { open } = useNftQuickView();
   const [tab, setTab] = useState<Tab>("all");
 
   const views = meta.data
@@ -120,7 +122,21 @@ export function ActivityTable() {
                   (event.asset_address ? shorten(event.asset_address, 5, 5) : "Unknown asset");
                 const time = event.block_time ?? event.now ?? null;
                 return (
-                  <tr key={event.signature}>
+                  <tr
+                    key={event.signature}
+                    data-clickable={event.asset_address ? "" : undefined}
+                    style={
+                      event.asset_address ? { cursor: "pointer" } : undefined
+                    }
+                    onClick={(e) => {
+                      if (!event.asset_address) return;
+                      if ((e.target as HTMLElement).closest("a,button")) return;
+                      open({
+                        address: event.asset_address,
+                        view: view ?? undefined,
+                      });
+                    }}
+                  >
                     <td>
                       <div className="cell-asset">
                         <div className="cell-thumb">
@@ -129,7 +145,26 @@ export function ActivityTable() {
                         <div style={{ minWidth: 0 }}>
                           <div className="nft-title" style={{ fontSize: 13.5, fontFamily: "var(--font-sans)", fontWeight: 500 }}>
                             {event.asset_address ? (
-                              <Link href={`/nft/${event.asset_address}`}>{name}</Link>
+                              <Link
+                                href={`/nft/${event.asset_address}`}
+                                onClick={(e) => {
+                                  if (
+                                    e.metaKey ||
+                                    e.ctrlKey ||
+                                    e.shiftKey ||
+                                    e.altKey ||
+                                    e.button !== 0
+                                  )
+                                    return;
+                                  e.preventDefault();
+                                  open({
+                                    address: event.asset_address as string,
+                                    view: view ?? undefined,
+                                  });
+                                }}
+                              >
+                                {name}
+                              </Link>
                             ) : (
                               name
                             )}

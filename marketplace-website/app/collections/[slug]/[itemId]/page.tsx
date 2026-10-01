@@ -2,35 +2,34 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCollectionDetailData } from "@/lib/collection-detail-data";
 import { collectionFontVars } from "@/components/collection/fonts";
-import { CollectionDetail } from "@/components/collection/CollectionDetail";
+import { CollectionItemView } from "@/components/collection/CollectionItemView";
 
 export const dynamic = "force-dynamic";
 
 export function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: { slug: string; itemId: string };
 }): Metadata {
   const data = getCollectionDetailData(params.slug);
-  if (!data) return { title: "Collection" };
-  return {
-    title: data.name,
-    description:
-      data.description || "A verified collection on the Zecians Marketplace.",
-  };
+  if (!data) return { title: "Item" };
+  return { title: `${data.name} #${params.itemId}` };
 }
 
-export default function CollectionDetailPage({
+export default function CollectionItemPage({
   params,
 }: {
-  params: { slug: string };
+  params: { slug: string; itemId: string };
 }) {
   const data = getCollectionDetailData(params.slug);
   if (!data) notFound();
 
+  const item = data.items.find((entry) => String(entry.id) === params.itemId);
+  if (!item) notFound();
+
   return (
     <div className={collectionFontVars}>
-      <CollectionDetail data={data} />
+      <CollectionItemView data={data} item={item} />
     </div>
   );
 }

@@ -10,7 +10,6 @@
  */
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Activity as ActivityIcon } from "lucide-react";
 import { useActivity } from "@/lib/api/hooks";
 import { activityLabel, type ListingView } from "@/lib/marketplace/views";
@@ -18,6 +17,7 @@ import { formatSol, relativeTime, shorten } from "@/lib/format";
 import { Artwork } from "@/components/ui/artwork";
 import { ErrorState } from "@/components/ui/empty-state";
 import { LineSkeleton } from "@/components/ui/skeleton";
+import { useNftQuickView } from "@/components/marketplace/nft-quick-view";
 import styles from "./collection-view.module.css";
 
 /**
@@ -55,14 +55,13 @@ export function CollectionActivity({
   collectionAddress,
   views,
   limit = 6,
-  onSelect,
 }: {
   collectionAddress: string | null;
   views: ListingView[];
   limit?: number;
-  onSelect?: (view: ListingView) => void;
 }) {
   const { data: events, error, loading } = useActivity(200);
+  const { open } = useNftQuickView();
 
   const viewByAsset = new Map(
     views.map((v) => [v.listing.asset_address, v])
@@ -130,7 +129,16 @@ export function CollectionActivity({
             key={event.signature}
             className={styles.activityRow}
             data-kind={kind}
+            data-clickable={view || event.asset_address ? "" : undefined}
             style={{ "--row": i } as React.CSSProperties}
+            onClick={(e) => {
+              if (!event.asset_address) return;
+              if ((e.target as HTMLElement).closest("a,button")) return;
+              open({
+                address: event.asset_address,
+                view: view ?? undefined,
+              });
+            }}
           >
             <span className={styles.assetCell}>
               <span className={styles.thumb} aria-hidden="true">
@@ -139,18 +147,19 @@ export function CollectionActivity({
                 ) : null}
               </span>
               <span style={{ minWidth: 0, display: "grid" }}>
-                {view && onSelect ? (
+                {event.asset_address ? (
                   <button
                     type="button"
                     className={styles.assetName}
-                    onClick={() => onSelect(view)}
+                    onClick={() =>
+                      open({
+                        address: event.asset_address as string,
+                        view: view ?? undefined,
+                      })
+                    }
                   >
                     {name}
                   </button>
-                ) : event.asset_address ? (
-                  <Link href={`/nft/${event.asset_address}`} className={styles.assetName}>
-                    {name}
-                  </Link>
                 ) : (
                   <span className={styles.assetName}>{name}</span>
                 )}

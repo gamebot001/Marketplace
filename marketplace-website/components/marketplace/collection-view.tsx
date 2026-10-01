@@ -1,17 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, ChevronDown, Globe } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Globe,
+  MessageCircle,
+  Search,
+  Send,
+  SlidersHorizontal,
+  Twitter,
+} from "lucide-react";
 import { useCollection, useListingsWithAssets } from "@/lib/api/hooks";
-import { buildListingViews, type ListingView } from "@/lib/marketplace/views";
+import {
+  buildListingViews,
+  buildTraitGroups,
+  type ListingView,
+} from "@/lib/marketplace/views";
 import { bpsToPercent, formatSol, resolveImageUrl } from "@/lib/format";
+import { NETWORK_LABEL } from "@/lib/config";
 import { DEMO_MODE, demoCollectionStats } from "@/lib/demo-marketplace-data";
 import { Artwork } from "@/components/ui/artwork";
 import { VerifiedBadge } from "@/components/ui/badges";
 import { Address } from "@/components/ui/address";
 import { CollectibleCard } from "@/components/marketplace/collectible-card";
-import { CollectibleModal } from "@/components/marketplace/collectible-modal";
 import { CollectionActivity } from "@/components/marketplace/collection-activity";
 import { CardSkeletons } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/empty-state";
@@ -20,12 +33,7 @@ import styles from "./collection-view.module.css";
 
 type Sort = "recent" | "price-asc" | "price-desc";
 type Tab = "nfts" | "activity" | "about";
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: "nfts", label: "NFTs" },
-  { id: "activity", label: "Activity" },
-  { id: "about", label: "About" },
-];
+type ListingFilter = "active" | "sold" | "all";
 
 const SORT_OPTIONS: { id: Sort; label: string }[] = [
   { id: "recent", label: "Recently listed" },
@@ -35,6 +43,27 @@ const SORT_OPTIONS: { id: Sort; label: string }[] = [
 
 function prettyHost(url: string): string {
   return url.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+}
+
+const SOCIAL_META: Record<
+  string,
+  { label: string; Icon: typeof Globe }
+> = {
+  twitter: { label: "X / Twitter", Icon: Twitter },
+  x: { label: "X / Twitter", Icon: Twitter },
+  discord: { label: "Discord", Icon: MessageCircle },
+  telegram: { label: "Telegram", Icon: Send },
+  tg: { label: "Telegram", Icon: Send },
+};
+
+function socialMeta(key: string) {
+  const normalized = key.toLowerCase();
+  return (
+    SOCIAL_META[normalized] ?? {
+      label: key.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      Icon: Globe,
+    }
+  );
 }
 
 export function CollectionView({ slug }: { slug: string }) {
@@ -50,40 +79,10 @@ export function CollectionView({ slug }: { slug: string }) {
   const [sort, setSort] = useState<Sort>("recent");
   const [tab, setTab] = useState<Tab>("nfts");
   const [sortOpen, setSortOpen] = useState(false);
-  const [selected, setSelected] = useState<ListingView | null>(null);
+  const [nftQuery, setNftQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ListingFilter>("active");
+  const [traitFilter, setTraitFilter] = useState("");
   const sortRef = useRef<HTMLDivElement>(null);
-  const artRef = useRef<HTMLDivElement>(null);
-
-  // Cursor-reactive highlight on the hero artwork — CSS variables only, set
-  // directly on the node. No React state, so moving the pointer never
-  // re-renders the page.
-  const onArtMove = useCallback((e: React.PointerEvent) => {
-    const el = artRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    el.style.setProperty(
-      "--px",
-      `${(((e.clientX - rect.left) / rect.width) * 100).toFixed(1)}%`
-    );
-    el.style.setProperty(
-      "--py",
-      `${(((e.clientY - rect.top) / rect.height) * 100).toFixed(1)}%`
-    );
-    // Barely-there parallax: a few pixels opposite the cursor.
-    const nx = (e.clientX - rect.left) / rect.width - 0.5;
-    const ny = (e.clientY - rect.top) / rect.height - 0.5;
-    el.style.setProperty("--tx", `${(nx * -6).toFixed(2)}px`);
-    el.style.setProperty("--ty", `${(ny * -6).toFixed(2)}px`);
-    el.style.setProperty("--glow", "1");
-  }, []);
-
-  const onArtLeave = useCallback(() => {
-    const el = artRef.current;
-    if (!el) return;
-    el.style.setProperty("--glow", "0");
-    el.style.setProperty("--tx", "0px");
-    el.style.setProperty("--ty", "0px");
-  }, []);
 
   // Close the sort menu on an outside press or Escape. One listener while open
   // only — never a per-frame or scroll-bound handler.
@@ -112,18 +111,82 @@ export function CollectionView({ slug }: { slug: string }) {
     ).filter((v) => v.listing.collection_address === address);
   }, [address, listingsState.data]);
 
+  const assetMap = useMemo(
+    () => listingsState.data?.assets ?? {},
+    [listingsState.data]
+  );
+
+  /**
+   * Gallery entries: one row per asset, preferring the active listing, then the
+   * most recent settled one. No asset is ever shown twice.
+   */
+  const entries = useMemo(() => {
+    const byAsset = new Map<string, ListingView>();
+    const ordered = [...allViews].sort(
+      (a, b) => (b.listing.created_at ?? 0) - (a.listing.created_at ?? 0)
+    );
+    for (const view of ordered) {
+      if (view.listing.status !== "active" && view.listing.status !== "sold") {
+        continue;
+      }
+      const key = view.listing.asset_address;
+      const existing = byAsset.get(key);
+      if (!existing) {
+        byAsset.set(key, view);
+        continue;
+      }
+      if (
+        existing.listing.status !== "active" &&
+        view.listing.status === "active"
+      ) {
+        byAsset.set(key, view);
+      }
+    }
+    return [...byAsset.values()];
+  }, [allViews]);
+
+  const activeViews = useMemo(
+    () => entries.filter((v) => v.listing.status === "active"),
+    [entries]
+  );
+
+  const traitGroups = useMemo(
+    () => buildTraitGroups(entries, assetMap),
+    [entries, assetMap]
+  );
+
   const views = useMemo(() => {
-    const active = allViews.filter((v) => v.listing.status === "active");
-    const sorted = [...active];
+    const query = nftQuery.trim().toLowerCase();
+    const filtered = entries.filter((view) => {
+      if (statusFilter !== "all" && view.listing.status !== statusFilter) {
+        return false;
+      }
+      if (traitFilter) {
+        const [trait, value] = traitFilter.split("\u0000");
+        const attrs = assetMap[view.listing.asset_address]?.attributes ?? [];
+        if (!attrs.some((a) => a.trait === trait && a.value === value)) {
+          return false;
+        }
+      }
+      if (query) {
+        const haystack = `${view.name} ${view.listing.asset_address}`.toLowerCase();
+        if (!haystack.includes(query)) return false;
+      }
+      return true;
+    });
+
+    const sorted = [...filtered];
     if (sort === "price-asc") {
       sorted.sort((a, b) => a.listing.price_lamports - b.listing.price_lamports);
     } else if (sort === "price-desc") {
       sorted.sort((a, b) => b.listing.price_lamports - a.listing.price_lamports);
     } else {
-      sorted.sort((a, b) => (b.listing.created_at ?? 0) - (a.listing.created_at ?? 0));
+      sorted.sort(
+        (a, b) => (b.listing.created_at ?? 0) - (a.listing.created_at ?? 0)
+      );
     }
     return sorted;
-  }, [allViews, sort]);
+  }, [entries, assetMap, nftQuery, statusFilter, traitFilter, sort]);
 
   if (loading) {
     return (
@@ -152,60 +215,70 @@ export function CollectionView({ slug }: { slug: string }) {
   const verified = collection.verification_status === "verified";
   const stats = DEMO_MODE ? demoCollectionStats(collection.slug) : null;
 
-  const activePrices = views.map((v) => v.listing.price_lamports);
   const floorValue = stats
     ? stats.floorLamports
-    : activePrices.length
-      ? Math.min(...activePrices)
+    : activeViews.length
+      ? Math.min(...activeViews.map((v) => v.listing.price_lamports))
       : null;
   const volumeValue = stats ? stats.volumeLamports : null;
   const supplyValue = stats?.supply ?? collection.supply ?? null;
-  const listedValue = stats?.listedCount ?? views.length;
+  const listedValue = stats?.listedCount ?? activeViews.length;
   const creator =
     allViews.find((v) => v.creatorAddress)?.creatorAddress ?? null;
   const royalty = bpsToPercent(collection.royalty_bps ?? null);
+
+  // Website may live on either the top-level field or the socials map; other
+  // social links are shown in About, so keep the two from ever doubling up.
+  const website =
+    collection.website?.trim() ||
+    collection.socials?.website?.trim() ||
+    collection.socials?.site?.trim() ||
+    null;
   const socials = Object.entries(collection.socials ?? {}).filter(
-    ([, value]) => Boolean(value)
+    ([key, value]) => Boolean(value) && !/^(website|site)$/i.test(key)
   );
+
+  const description = collection.description?.trim() || null;
+  const lede =
+    description ??
+    `Explore the ${collection.name} collection. Browse available pieces, review current listings, and follow the activity around the collection.`;
+
   const sortLabel =
     SORT_OPTIONS.find((option) => option.id === sort)?.label ?? "Recently listed";
 
+  const tabs: { id: Tab; label: string; count?: number }[] = [
+    { id: "nfts", label: "NFTs", count: entries.length },
+    { id: "activity", label: "Activity" },
+    { id: "about", label: "About" },
+  ];
+
   return (
     <div className={styles.page}>
-      {/* Route-scoped chrome tweak: the collection page ends after its content. */}
-      <style
-        dangerouslySetInnerHTML={{ __html: ".mk-footer{display:none!important}" }}
-      />
-      <div className={styles.atmosphere} aria-hidden="true" />
-
       <header className={styles.shell}>
         <Reveal className={styles.hero}>
           <div className={styles.heroArt}>
-            <div
-              className={styles.artFrame}
-              ref={artRef}
-              onPointerMove={onArtMove}
-              onPointerLeave={onArtLeave}
-            >
+            <div className={styles.artFrame}>
               <Artwork
                 src={resolveImageUrl(collection.image)}
                 alt={collection.name}
-                sizes="(max-width: 980px) 40vw, 360px"
+                sizes="(max-width: 980px) 40vw, 320px"
                 priority
               />
-              <span className={styles.artGlow} aria-hidden />
             </div>
           </div>
 
           <div className={styles.heroInfo}>
+            <span className={styles.kicker}>
+              Collection
+              {collection.standard ? ` · ${collection.standard}` : ""}
+            </span>
+
             <h1 className={styles.title}>
               {collection.name}
               {verified && <VerifiedBadge label="" />}
             </h1>
 
-            <p className={styles.desc}>
-              {collection.description || "No description provided."}
-            </p>
+            <p className={styles.desc}>{lede}</p>
 
             {creator && (
               <span className={styles.creatorLine}>
@@ -214,21 +287,7 @@ export function CollectionView({ slug }: { slug: string }) {
               </span>
             )}
 
-            {collection.website && (
-              <div className={styles.actions}>
-                <a
-                  className="btn btn-outline"
-                  href={collection.website}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Globe size={15} aria-hidden />
-                  Website
-                </a>
-              </div>
-            )}
-
-            <dl className={styles.stats} aria-label="Collection stats">
+            <dl className={styles.stats} aria-label="Collection market snapshot">
               <div className={styles.stat}>
                 <dt className={styles.statK}>Floor</dt>
                 <dd className={styles.statV}>
@@ -265,22 +324,26 @@ export function CollectionView({ slug }: { slug: string }) {
       </header>
 
       <nav className={styles.shell} aria-label="Collection sections">
-        <div className={styles.tabs} role="tablist" aria-label="Collection sections">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              id={`tab-${t.id}`}
-              aria-selected={tab === t.id}
-              aria-controls={`panel-${t.id}`}
-              className={styles.tab}
-              data-active={tab === t.id}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className={styles.tabsBar}>
+          <div className="tab-row" role="tablist" aria-label="Collection sections">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                id={`tab-${t.id}`}
+                aria-selected={tab === t.id}
+                aria-controls={`panel-${t.id}`}
+                className="tab-btn"
+                onClick={() => setTab(t.id)}
+              >
+                {t.label}
+                {t.count !== undefined && (
+                  <span className="tab-count">{t.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </nav>
 
@@ -296,10 +359,10 @@ export function CollectionView({ slug }: { slug: string }) {
           <div className={styles.shell}>
             <div className={styles.sectionHead}>
               <div>
-                <span className={styles.sectionIndex}>Listings</span>
-                <h2 className={styles.sectionTitle}>The Collection</h2>
+                <span className={styles.sectionIndex}>NFTs</span>
+                <h2 className={styles.sectionTitle}>Browse pieces</h2>
               </div>
-              {views.length > 1 && (
+              {entries.length > 0 && (
                 <div className={styles.sortWrap} ref={sortRef}>
                   <button
                     type="button"
@@ -356,22 +419,92 @@ export function CollectionView({ slug }: { slug: string }) {
               <ErrorState message={listingsState.error} />
             ) : listingsState.loading ? (
               <CardSkeletons count={4} />
-            ) : views.length === 0 ? (
+            ) : entries.length === 0 ? (
               <EmptyState
                 title="Nothing is listed yet"
                 message="Nothing from this collection is currently for sale. New listings will appear here."
               />
             ) : (
-              <div className={styles.grid}>
-                {views.map((view, i) => (
-                  <CollectibleCard
-                    key={view.listing.listing_id}
-                    view={view}
-                    priority={i < 6}
-                    onSelect={setSelected}
-                  />
-                ))}
-              </div>
+              <>
+                <div className={styles.nftToolbar}>
+                  <label className={styles.nftSearch}>
+                    <Search size={14} aria-hidden />
+                    <input
+                      type="search"
+                      className="input"
+                      placeholder="Search this collection"
+                      aria-label="Search NFTs in this collection"
+                      value={nftQuery}
+                      onChange={(e) => setNftQuery(e.target.value)}
+                    />
+                  </label>
+
+                  <select
+                    className="select"
+                    aria-label="Filter by listing status"
+                    value={statusFilter}
+                    onChange={(e) =>
+                      setStatusFilter(e.target.value as ListingFilter)
+                    }
+                  >
+                    <option value="active">Listed</option>
+                    <option value="sold">Sold</option>
+                    <option value="all">All items</option>
+                  </select>
+
+                  {traitGroups.length > 0 && (
+                    <select
+                      className="select"
+                      aria-label="Filter by trait"
+                      value={traitFilter}
+                      onChange={(e) => setTraitFilter(e.target.value)}
+                    >
+                      <option value="">All traits</option>
+                      {traitGroups.map((group) =>
+                        group.values.map((value) => (
+                          <option
+                            key={`${group.trait}-${value}`}
+                            value={`${group.trait}\u0000${value}`}
+                          >
+                            {group.trait}: {value}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  )}
+
+                  {views.length !== entries.length && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => {
+                        setNftQuery("");
+                        setStatusFilter("active");
+                        setTraitFilter("");
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {views.length === 0 ? (
+                  <div className={styles.nftEmpty}>
+                    <SlidersHorizontal size={16} aria-hidden />
+                    <span>No items match these filters.</span>
+                  </div>
+                ) : (
+                  <div className={styles.grid}>
+                    {views.map((view, i) => (
+                      <CollectibleCard
+                        key={view.listing.asset_address}
+                        view={view}
+                        priority={i < 6}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </section>
@@ -387,11 +520,18 @@ export function CollectionView({ slug }: { slug: string }) {
           aria-label="Collection activity"
         >
           <div className={styles.shell}>
+            <div className={styles.sectionHead}>
+              <div>
+                <span className={styles.sectionIndex}>Activity</span>
+                <h2 className={styles.sectionTitle}>
+                  Sales, listings &amp; transfers
+                </h2>
+              </div>
+            </div>
             <CollectionActivity
               collectionAddress={address}
               views={allViews}
               limit={12}
-              onSelect={setSelected}
             />
           </div>
         </section>
@@ -410,7 +550,7 @@ export function CollectionView({ slug }: { slug: string }) {
             <div className={styles.sectionHead}>
               <div>
                 <span className={styles.sectionIndex}>About</span>
-                <h2 className={styles.sectionTitle}>Specs &amp; links</h2>
+                <h2 className={styles.sectionTitle}>Details &amp; links</h2>
               </div>
             </div>
 
@@ -427,7 +567,7 @@ export function CollectionView({ slug }: { slug: string }) {
               )}
               {collection.collection_address && (
                 <div className={styles.fact}>
-                  <dt className={styles.factK}>Collection</dt>
+                  <dt className={styles.factK}>Contract</dt>
                   <dd className={styles.factV}>
                     <Address
                       value={collection.collection_address}
@@ -442,33 +582,44 @@ export function CollectionView({ slug }: { slug: string }) {
                 <dt className={styles.factK}>Chain</dt>
                 <dd className={styles.factV}>
                   {collection.chain_deployed
-                    ? "Deployed on-chain"
-                    : "Not deployed"}
+                    ? `${NETWORK_LABEL} · deployed`
+                    : `${NETWORK_LABEL} · not deployed`}
                 </dd>
               </div>
-              {socials.map(([key, value]) => (
-                <div className={styles.fact} key={key}>
-                  <dt className={styles.factK}>{key}</dt>
+              {website && (
+                <div className={styles.fact}>
+                  <dt className={styles.factK}>Website</dt>
                   <dd className={styles.factV}>
-                    <a href={value} target="_blank" rel="noreferrer">
-                      {prettyHost(value)}
+                    <a href={website} target="_blank" rel="noreferrer">
+                      {prettyHost(website)}
                     </a>
                   </dd>
                 </div>
-              ))}
+              )}
+              {socials.map(([key, value]) => {
+                const { label } = socialMeta(key);
+                return (
+                  <div className={styles.fact} key={key}>
+                    <dt className={styles.factK}>{label}</dt>
+                    <dd className={styles.factV}>
+                      <a href={value} target="_blank" rel="noreferrer">
+                        {prettyHost(value)}
+                      </a>
+                    </dd>
+                  </div>
+                );
+              })}
+              <div className={styles.fact}>
+                <dt className={styles.factK}>Source</dt>
+                <dd className={styles.factV}>
+                  {verified
+                    ? "Verified collection registered on Zecians"
+                    : "Registered on Zecians · unverified"}
+                </dd>
+              </div>
             </dl>
           </div>
         </section>
-      )}
-
-      {selected && (
-        <CollectibleModal
-          view={selected}
-          asset={
-            listingsState.data?.assets?.[selected.listing.asset_address] ?? null
-          }
-          onClose={() => setSelected(null)}
-        />
       )}
     </div>
   );

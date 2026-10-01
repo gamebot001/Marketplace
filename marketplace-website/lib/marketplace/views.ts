@@ -79,6 +79,7 @@ export interface ExploreFilters {
   priceMax: string; // SOL, "" = none
   verifiedOnly: boolean;
   status: "any" | "active" | "sold";
+  traitFilter: string; // "trait\u0000value", "" = all
   sort: ExploreSort;
 }
 
@@ -96,8 +97,48 @@ export const DEFAULT_FILTERS: ExploreFilters = {
   priceMax: "",
   verifiedOnly: false,
   status: "active",
+  traitFilter: "",
   sort: "recent",
 };
+
+export interface TraitGroup {
+  trait: string;
+  values: string[];
+}
+
+/**
+ * Real trait facets for a set of listings. Only attributes the API actually
+ * returned are surfaced — a collection with no trait metadata yields no groups
+ * rather than an invented taxonomy.
+ */
+export function buildTraitGroups(
+  views: ListingView[],
+  assets: Record<string, MarketplaceAsset>
+): TraitGroup[] {
+  const map = new Map<string, Set<string>>();
+  for (const view of views) {
+    const attrs = assets[view.listing.asset_address]?.attributes;
+    if (!attrs) continue;
+    for (const attr of attrs) {
+      if (!attr?.trait || !attr?.value) continue;
+      if (!map.has(attr.trait)) map.set(attr.trait, new Set());
+      map.get(attr.trait)!.add(attr.value);
+    }
+  }
+  return [...map.entries()]
+    .map(([trait, values]) => ({ trait, values: [...values].sort() }))
+    .sort((a, b) => a.trait.localeCompare(b.trait));
+}
+
+/** Split a "trait\u0000value" facet key back into its parts. */
+export function parseTraitFilter(value: string): {
+  trait: string;
+  value: string;
+} {
+  const index = value.indexOf("\u0000");
+  if (index < 0) return { trait: value, value: "" };
+  return { trait: value.slice(0, index), value: value.slice(index + 1) };
+}
 
 function solToLamportsBigInt(input: string): bigint | null {
   const text = input.trim();
@@ -113,11 +154,15 @@ function solToLamportsBigInt(input: string): bigint | null {
 
 export function filterListingViews(
   views: ListingView[],
-  filters: ExploreFilters
+  filters: ExploreFilters,
+  assets?: Record<string, MarketplaceAsset>
 ): ListingView[] {
   const search = filters.search.trim().toLowerCase();
   const min = solToLamportsBigInt(filters.priceMin);
   const max = solToLamportsBigInt(filters.priceMax);
+  const trait = filters.traitFilter
+    ? parseTraitFilter(filters.traitFilter)
+    : null;
 
   let result = views.filter((view) => {
     if (filters.collectionSlug && view.collectionSlug !== filters.collectionSlug) {
@@ -126,6 +171,14 @@ export function filterListingViews(
     if (filters.verifiedOnly && !view.collectionVerified) return false;
     if (filters.status !== "any" && view.listing.status !== filters.status) {
       return false;
+    }
+    if (trait && assets) {
+      const attrs = assets[view.listing.asset_address]?.attributes ?? [];
+      if (
+        !attrs.some((a) => a.trait === trait.trait && a.value === trait.value)
+      ) {
+        return false;
+      }
     }
 
     const price = BigInt(view.listing.price_lamports ?? 0);

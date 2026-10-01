@@ -9,13 +9,15 @@
  * favorite mark and action arrow appear, and the price takes the accent.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Heart } from "lucide-react";
 import { Artwork } from "@/components/ui/artwork";
 import { VerifiedBadge } from "@/components/ui/badges";
 import { formatSol } from "@/lib/format";
 import type { ListingView } from "@/lib/marketplace/views";
+import { useNftQuickView } from "@/components/marketplace/nft-quick-view";
+import { useWatchlist } from "@/components/marketplace/watchlist";
 
 export function NftCard({
   view,
@@ -26,7 +28,9 @@ export function NftCard({
 }) {
   const { listing } = view;
   const mediaRef = useRef<HTMLDivElement>(null);
-  const [faved, setFaved] = useState(false);
+  const { open } = useNftQuickView();
+  const { has, toggle } = useWatchlist();
+  const faved = has(listing.asset_address);
 
   // Cursor illumination: cheap per-card handler writing CSS vars.
   const onMediaMove = useCallback((e: React.PointerEvent) => {
@@ -47,6 +51,11 @@ export function NftCard({
       href={`/nft/${listing.asset_address}`}
       className="nft-card"
       aria-label={`${view.name} — ${formatSol(listing.price_lamports)}`}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+        e.preventDefault();
+        open({ address: listing.asset_address, view });
+      }}
     >
       <div
         className="nft-media"
@@ -64,16 +73,19 @@ export function NftCard({
             <span className="badge listing-chip">{listing.status}</span>
           )
         )}
-        <span className="nft-fav" aria-hidden="true">
-          <Heart
-            size={13}
-            fill={faved ? "currentColor" : "none"}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setFaved((f) => !f);
-            }}
-          />
+        <span
+          className="nft-fav"
+          role="button"
+          tabIndex={-1}
+          aria-pressed={faved}
+          aria-label={faved ? "Remove from watchlist" : "Add to watchlist"}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggle(listing.asset_address);
+          }}
+        >
+          <Heart size={13} fill={faved ? "currentColor" : "none"} aria-hidden />
         </span>
         <span className="nft-arrow" aria-hidden="true">
           <ArrowUpRight size={14} />

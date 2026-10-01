@@ -1328,13 +1328,10 @@ p {
    ========================================================================== */
 
 .fc-card {
-  --px: 50%;
-  --py: 40%;
-  --glow: 0;
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
-  min-height: 336px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  min-height: 300px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: linear-gradient(150deg, var(--surface-2), var(--surface) 62%);
@@ -1353,7 +1350,7 @@ p {
   position: relative;
   overflow: hidden;
   background: linear-gradient(160deg, #1b1713, #0e0c0a);
-  min-height: 280px;
+  min-height: 240px;
   border-right: 1px solid var(--line);
 }
 
@@ -1370,22 +1367,6 @@ p {
 .fc-card:hover .fc-media img {
   transform: scale(1.05) translate3d(-1.5%, -2%, 0);
   filter: brightness(1.07) saturate(1.05);
-}
-
-/* cursor-following warm glow over the artwork */
-.fc-media::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    300px circle at var(--px) var(--py),
-    rgba(240, 196, 118, 0.14),
-    transparent 62%
-  );
-  opacity: var(--glow);
-  transition: opacity 420ms var(--ease);
-  mix-blend-mode: screen;
 }
 
 /* amber border accent around the artwork on hover */
@@ -1424,24 +1405,6 @@ p {
   position: static;
   width: 100% !important;
   height: 100% !important;
-}
-
-/* collection glyph watermark behind the artwork edge */
-.fc-glyph {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  z-index: 2;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  color: rgba(250, 246, 238, 0.66);
-  background: rgba(10, 9, 7, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  padding: 4px 9px;
-  backdrop-filter: blur(6px);
-  text-transform: uppercase;
 }
 
 .fc-body {
@@ -1531,17 +1494,6 @@ p {
   transform: translateX(0);
   color: var(--accent-bright);
   gap: 12px;
-}
-
-.fc-index {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  color: var(--faint);
-  z-index: 2;
 }
 
 @media (max-width: 760px) {
@@ -3032,6 +2984,1675 @@ p {
   color: var(--faint);
   padding: 0 10px 0 2px;
   letter-spacing: 0.08em;
+}
+
+/* ============================================================================
+   EXPLORE — global discovery scope banner
+   ========================================================================== */
+
+.explore-scope {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent),
+    var(--surface);
+}
+.explore-scope-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.explore-scope p {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.explore-scope p strong {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+.explore-scope-stats {
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .explore-scope {
+    flex-wrap: wrap;
+  }
+  .explore-scope-stats {
+    width: 100%;
+    padding-left: 44px;
+  }
+}
+
+/* ============================================================================
+   MARKETPLACE CONTROLS — shared search / filter / sort primitives.
+   One coherent control language: 40px height, --radius, hairline border, no
+   box-inside-box container. Used by the collections directory and available to
+   every marketplace surface so the same control reads the same everywhere.
+   ========================================================================== */
+
+/* --- unified control row: controls sit directly on the page --------------- */
+
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* --- unified search field ------------------------------------------------- */
+
+.mkt-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 260px;
+  min-width: 200px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--faint);
+  transition: border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.mkt-search svg {
+  flex: none;
+}
+.mkt-search:focus-within {
+  border-color: var(--accent-line);
+  background: var(--surface-3);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.mkt-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding-left: 9px;
+  border: 0;
+  background: transparent;
+  color: var(--text-strong);
+  font: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+.mkt-search input::placeholder {
+  color: var(--faint);
+}
+
+/* --- compact filter toggle ------------------------------------------------ */
+
+.mkt-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease), color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+.mkt-control:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-3);
+  color: var(--text-strong);
+}
+.mkt-control:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.mkt-control[aria-pressed="true"] {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+}
+
+/* --- sort dropdown: trigger and menu share one geometry ------------------- */
+
+.mkt-sort {
+  position: relative;
+  flex: none;
+  width: 210px;
+  max-width: 100%;
+}
+.mkt-sort-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-strong);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.mkt-sort-trigger:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-3);
+}
+.mkt-sort-trigger[aria-expanded="true"] {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.mkt-sort-trigger:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.mkt-sort-label {
+  flex: none;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--faint);
+}
+.mkt-sort-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mkt-sort-chevron {
+  flex: none;
+  color: var(--muted);
+  transition: transform 260ms var(--ease-lux), color var(--dur) var(--ease);
+}
+.mkt-sort-chevron[data-open="true"] {
+  transform: rotate(180deg);
+  color: var(--accent-bright);
+}
+.mkt-sort-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lift);
+  transform-origin: top center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(0.985);
+  pointer-events: none;
+  transition: opacity 180ms var(--ease), transform 220ms var(--ease-lux),
+    visibility 0s linear 220ms;
+}
+.mkt-sort-menu[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  transition: opacity 180ms var(--ease), transform 220ms var(--ease-lux),
+    visibility 0s;
+}
+.mkt-sort-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms var(--ease), color 160ms var(--ease);
+}
+.mkt-sort-option:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-strong);
+}
+.mkt-sort-option[data-active="true"] {
+  color: var(--accent-bright);
+}
+.mkt-sort-option[data-active="true"] svg {
+  color: var(--accent);
+}
+
+/* ============================================================================
+   COLLECTIONS INDEX — a premium row-based collection directory.
+   Scoped to /collections: a slightly wider canvas on desktop, tighter
+   vertical rhythm, and a directory whose rows scale cleanly from 10 to 500
+   collections without leaning on large artwork.
+   ========================================================================== */
+
+/* The collections index gets its own coherent deep-warm-black environment so
+   the whole surface reads as one place rather than the page backdrop showing
+   through in patches. Scoped with :has() so it fills the entire content area
+   below the header, even when the directory is short. Purely CSS: one broad
+   amber field, one barely-there dark-violet counter-tone near the lower edge
+   and a soft vignette, breathing on a ~52s ambient cycle (transform/opacity
+   only — no particles, no stars, no lines, never layout, never paint). */
+.mp-main:has(> .coll-index) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #0a0908;
+}
+/* static tonal depth + vignette */
+.mp-main:has(> .coll-index)::before {
+  content: "";
+  position: absolute;
+  inset: -10% -6%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      72% 52% at 82% -8%,
+      rgba(232, 161, 60, 0.06),
+      rgba(232, 161, 60, 0) 70%
+    ),
+    radial-gradient(
+      135% 92% at 50% 38%,
+      rgba(0, 0, 0, 0) 48%,
+      rgba(0, 0, 0, 0.52) 100%
+    );
+}
+/* the living field: a broad amber tone plus a subtle dark-violet counter-tone,
+   drifting almost imperceptibly so the page feels alive at a glance */
+.mp-main:has(> .coll-index)::after {
+  content: "";
+  position: absolute;
+  inset: -14% -8%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      60% 46% at 78% 4%,
+      rgba(232, 161, 60, 0.13),
+      rgba(232, 161, 60, 0) 66%
+    ),
+    radial-gradient(
+      54% 44% at 8% 100%,
+      rgba(88, 66, 122, 0.075),
+      rgba(88, 66, 122, 0) 68%
+    );
+  animation: atmosBreath 52s ease-in-out infinite;
+}
+@keyframes atmosBreath {
+  0%,
+  100% {
+    opacity: 0.78;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(0, -1.4%, 0) scale(1.02);
+  }
+}
+.coll-index .container {
+  max-width: 1600px;
+}
+.coll-index-body {
+  position: relative;
+  z-index: 1;
+  padding-top: 52px;
+  padding-bottom: 88px;
+}
+
+.coll-browser {
+  display: grid;
+  gap: 36px;
+}
+
+/* --- featured collections — depth deck (tight cluster) ------------------- */
+
+/* A dense depth deck of collection identities, drawn from the same dataset as
+   the directory below. Every card carries its full content; depth is expressed
+   by scale, Z recession, a Y turn and a dim overlay child — never a filter.
+   Position is written to each card's transform and animated by a CSS
+   transition, so nothing runs per frame while the deck is at rest and the
+   composition can never flicker. */
+.coll-deck {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  margin-inline: calc(-1 * var(--gutter));
+}
+.coll-deck-stage {
+  --line-2: var(--line-strong);
+  --line-accent: var(--accent-line);
+  position: relative;
+  height: 560px;
+  perspective: 2100px;
+  perspective-origin: 50% 46%;
+  border-radius: 20px;
+  overflow: hidden;
+  overflow: clip;
+  background:
+    radial-gradient(90% 120% at 50% 118%, var(--accent-soft), transparent 62%),
+    linear-gradient(180deg, var(--surface-2), var(--bg) 70%);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lift);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior-x: contain;
+}
+.coll-deck-stage.is-dragging {
+  cursor: grabbing;
+}
+.coll-deck-stage.is-dragging * {
+  cursor: grabbing !important;
+}
+.coll-deck-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    58% 42% at 50% 50%,
+    var(--accent-soft),
+    transparent 74%
+  );
+}
+.coll-deck-stage > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* top chrome — the count and the two pager arrows, floating over the deck */
+.coll-deck-chrome {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 200;
+  pointer-events: none;
+}
+.coll-deck-count {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.coll-deck-count b {
+  color: var(--accent-bright);
+  font-weight: 600;
+}
+.coll-deck-arrows {
+  display: inline-flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+.coll-deck-arrow {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  position: relative;
+  z-index: 201;
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease),
+    background var(--dur) var(--ease), transform var(--dur) var(--ease-lux),
+    box-shadow var(--dur) var(--ease);
+}
+.coll-deck-arrow:hover {
+  border-color: var(--line-accent);
+  color: var(--accent-bright);
+  background: var(--accent-soft);
+  transform: scale(1.08);
+  box-shadow: 0 0 20px -4px var(--accent-soft);
+}
+.coll-deck-arrow:active {
+  transform: scale(0.92);
+  background: var(--accent-soft);
+}
+.coll-deck-arrow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.coll-deck-arrow svg {
+  pointer-events: none;
+}
+
+/* a soft amber pool under the deck — never a hard container edge */
+.coll-deck-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 66px;
+  width: 760px;
+  height: 130px;
+  pointer-events: none;
+  z-index: 0;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    50% 50% at 50% 100%,
+    var(--accent-soft),
+    transparent 74%
+  );
+  will-change: transform;
+}
+
+/* routing toast for a card click */
+.coll-deck-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%) translateY(14px);
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-accent);
+  color: var(--accent-bright);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 260ms var(--ease), transform 260ms var(--ease-lux);
+  z-index: 200;
+}
+.coll-deck-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.coll-deck-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* The card. Its transform (translate + rotateY + scale) is written every frame
+   by JS (rAF) — there is deliberately no transform transition, so a new target
+   can never fight an in-flight one. The separate `translate` property carries
+   the active-card hover lift so the two never fight. The dim overlay (a child
+   div) expresses depth. */
+.coll-deck-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 260px;
+  height: 400px;
+  margin: -200px 0 0 -130px;
+  padding: 24px 20px 22px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  transform-style: preserve-3d;
+  transition: translate 300ms var(--ease-lux), border-color 520ms var(--ease),
+    box-shadow 620ms var(--ease);
+  will-change: transform, translate;
+  cursor: grab;
+  box-shadow: var(--shadow-soft);
+}
+.coll-deck-stage.is-dragging .coll-deck-card {
+  cursor: grabbing;
+}
+.coll-deck-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    157deg,
+    var(--surface-3) 0%,
+    var(--surface) 62%,
+    var(--bg) 100%
+  );
+  z-index: -1;
+}
+.coll-deck-card[data-role="active"] {
+  border-color: var(--line-accent);
+  box-shadow: var(--shadow-lift), 0 0 78px -22px var(--accent-soft);
+}
+.coll-deck-card[data-role="active"]::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    72% 54% at 50% 0%,
+    var(--accent-soft),
+    transparent 64%
+  );
+  z-index: 0;
+}
+/* only the active card lifts; side / far cards never move on hover */
+.coll-deck-card.is-hovered[data-role="active"] {
+  translate: 0 -10px;
+  box-shadow: var(--shadow-lift), 0 0 66px -18px var(--accent-soft);
+}
+.coll-deck-card.is-hovered:not([data-role="active"]) .coll-deck-pfp {
+  box-shadow: inset 0 0 0 1px var(--line), 0 0 0 1.5px var(--line-accent),
+    0 0 26px -8px var(--accent-soft);
+}
+
+.coll-deck-dim {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #060504;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  will-change: opacity;
+}
+
+.coll-deck-pfp {
+  position: relative;
+  z-index: 2;
+  width: 200px;
+  height: 200px;
+  flex: none;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line), 0 0 0 1px var(--line-accent),
+    var(--shadow-soft);
+  transition: box-shadow 400ms var(--ease);
+}
+.coll-deck-card[data-role="active"] .coll-deck-pfp {
+  box-shadow: inset 0 0 0 1px var(--line-2), 0 0 0 1.5px var(--line-accent),
+    0 0 0 5px var(--surface-2), var(--shadow-lift),
+    0 0 44px -8px var(--accent-soft);
+}
+.coll-deck-pfp img,
+.coll-deck-pfp .media-fallback {
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.coll-deck-pfp img {
+  transition: transform 700ms var(--ease-lux);
+}
+.coll-deck-card.is-hovered .coll-deck-pfp img {
+  transform: scale(1.05);
+}
+
+.coll-deck-name-row {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  line-height: 1.2;
+  margin-bottom: 14px;
+  width: 100%;
+}
+.coll-deck-name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 19px;
+  letter-spacing: -0.014em;
+  color: var(--text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.coll-deck-verify {
+  color: var(--accent);
+  flex: none;
+}
+
+.coll-deck-extra {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.coll-deck-rule {
+  height: 1px;
+  margin-bottom: 14px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--line-2) 30%,
+    var(--line-2) 70%,
+    transparent
+  );
+}
+.coll-deck-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  align-items: start;
+}
+.coll-deck-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+}
+.coll-deck-stat + .coll-deck-stat {
+  border-left: 1px solid var(--line);
+}
+.coll-deck-k {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--faint);
+  white-space: nowrap;
+}
+.coll-deck-v {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.coll-deck-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  transition: color 300ms var(--ease), gap 340ms var(--ease-lux);
+}
+.coll-deck-cta svg {
+  transition: transform 380ms var(--ease-lux);
+}
+.coll-deck-card[data-role="active"]:hover .coll-deck-cta {
+  color: var(--accent-bright);
+  gap: 12px;
+}
+.coll-deck-card[data-role="active"]:hover .coll-deck-cta svg {
+  transform: translateX(2px);
+}
+
+@media (max-width: 900px) {
+  .coll-deck-stage {
+    height: 480px;
+  }
+  .coll-deck-card {
+    width: 220px;
+    height: 340px;
+    margin: -170px 0 0 -110px;
+    padding: 18px 16px;
+  }
+  .coll-deck-pfp {
+    width: 160px;
+    height: 160px;
+    margin-bottom: 14px;
+  }
+  .coll-deck-name {
+    font-size: 16px;
+  }
+  .coll-deck-v {
+    font-size: 12px;
+  }
+  .coll-deck-k {
+    font-size: 8px;
+  }
+  .coll-deck-cta {
+    font-size: 9px;
+  }
+  .coll-deck-glow {
+    width: 520px;
+    height: 100px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coll-deck-card,
+  .coll-deck-pfp,
+  .coll-deck-pfp img,
+  .coll-deck-cta,
+  .coll-deck-toast {
+    transition: none !important;
+  }
+}
+
+/* --- discovery controls -------------------------------------------------- */
+
+/* One unified control row, sitting directly on the page — no outer container. */
+.coll-controls {
+  width: 100%;
+  gap: 12px;
+}
+/* view switch — a compact segmented control sitting just before the search
+   field; list is the default, compact is the alternate scan of the same data */
+.coll-viewswitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 40px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.coll-viewswitch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 32px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+.coll-viewswitch button:hover {
+  color: var(--text-strong);
+  background: rgba(255, 255, 255, 0.045);
+}
+.coll-viewswitch button[aria-pressed="true"] {
+  color: var(--accent-bright);
+  background: var(--accent-soft);
+}
+.coll-viewswitch button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.coll-controls .mkt-search {
+  flex: 1 1 320px;
+}
+/* the search glyph and the verified check carry the Zecians amber; the fields
+   and buttons themselves stay minimal and dark */
+.coll-controls .mkt-search svg {
+  color: var(--accent);
+  transition: color var(--dur) var(--ease);
+}
+.coll-controls .mkt-search:focus-within svg {
+  color: var(--accent-bright);
+}
+.coll-controls-end > .mkt-control svg {
+  color: var(--accent);
+  transition: color var(--dur) var(--ease);
+}
+.coll-controls-end > .mkt-control[aria-pressed="true"] svg {
+  color: var(--accent-bright);
+}
+/* the sort trigger carries a touch more presence than the plain filter button:
+   clearer hairline, brighter value, a visible chevron and a restrained amber
+   open state — still quiet, never glowing */
+.coll-controls-end .mkt-sort-trigger {
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--text-strong);
+  font-weight: 500;
+}
+.coll-controls-end .mkt-sort-trigger:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.coll-controls-end .mkt-sort-chevron {
+  color: var(--text);
+}
+.coll-controls-end .mkt-sort-trigger:hover .mkt-sort-chevron {
+  color: var(--accent);
+}
+.coll-controls-end .mkt-sort-trigger[aria-expanded="true"] {
+  border-color: var(--accent-line);
+  background: linear-gradient(
+    180deg,
+    rgba(232, 161, 60, 0.09),
+    rgba(232, 161, 60, 0.035)
+  );
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.coll-controls-end .mkt-sort-trigger[aria-expanded="true"] .mkt-sort-chevron {
+  color: var(--accent-bright);
+}
+/* filter + sort hold together on the right, keeping aligned outer edges */
+.coll-controls-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  margin-left: auto;
+}
+
+.coll-results {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 20px;
+}
+.coll-results-count {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.coll-clear {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+.coll-clear:hover,
+.coll-clear:focus-visible {
+  outline: none;
+  color: var(--accent-bright);
+}
+
+/* --- directory ----------------------------------------------------------- */
+
+/* One intentional directory surface: clean amber-tinted edges give the table a
+   clear top, bottom and sides; the column labels sit vertically centred inside
+   the header band with exactly one divider beneath them. Header and rows share
+   the same grid and the same 16px insets, so their edges line up precisely. */
+.coll-list {
+  display: grid;
+  border-top: 1px solid rgba(232, 161, 60, 0.12);
+  border-left: 1px solid rgba(232, 161, 60, 0.12);
+  border-right: 1px solid rgba(232, 161, 60, 0.12);
+  border-bottom: 1px solid rgba(232, 161, 60, 0.09);
+}
+.coll-list > .coll-row:last-child {
+  border-bottom: 0;
+}
+
+/* column labels share the row grid, so the directory reads as a table. The
+   metric group is the flexible column and spreads its five cells evenly across
+   all remaining width, so the table fills the full content area instead of
+   pinning a narrow block to the right. */
+.coll-list-head {
+  display: grid;
+  grid-template-columns: 54px 34px 48px minmax(200px, 1fr) minmax(0, 2.8fr) 24px;
+  align-items: center;
+  gap: 16px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.012);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: rgba(239, 233, 223, 0.68);
+}
+/* the heading belongs to the identity cluster, so it starts on the PFP column
+   rather than the name text baseline */
+.coll-list-head-name {
+  grid-column: 3 / 5;
+}
+.coll-list-head-stats {
+  grid-column: 5;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+}
+/* clickable metric headers — neutral, then amber for the active sort */
+.coll-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+.coll-sort-btn svg {
+  flex: none;
+  color: var(--faint);
+  opacity: 0.85;
+  transition: color var(--dur) var(--ease), opacity var(--dur) var(--ease);
+}
+.coll-sort-btn:hover {
+  color: var(--text-strong);
+}
+.coll-sort-btn:hover svg {
+  color: var(--muted);
+  opacity: 1;
+}
+.coll-sort-btn[data-state="asc"],
+.coll-sort-btn[data-state="desc"] {
+  color: var(--accent-bright);
+}
+.coll-sort-btn[data-state="asc"] svg,
+.coll-sort-btn[data-state="desc"] svg {
+  color: var(--accent);
+  opacity: 1;
+}
+.coll-sort-btn:focus-visible {
+  outline: none;
+  border-radius: 3px;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.coll-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 54px 34px 48px minmax(200px, 1fr) minmax(0, 2.8fr) 24px;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  animation: collRowIn 520ms var(--ease-lux) both;
+  animation-delay: calc(min(var(--i, 0), 12) * 26ms);
+  transition: background var(--dur) var(--ease);
+}
+/* full-row navigation target sits beneath the content; non-interactive content
+   is inert so a click anywhere on the row still follows the link, while the
+   favourite control keeps its own pointer events. */
+.coll-row-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  outline: none;
+}
+.coll-row > *:not(.coll-row-hit):not(.coll-row-fav-slot) {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* the amber highlight sweeps across the row on hover / focus */
+.coll-row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(232, 161, 60, 0.15),
+    rgba(232, 161, 60, 0.045) 46%,
+    transparent 78%
+  );
+  opacity: 0;
+  transform: scaleX(0.7);
+  transform-origin: left center;
+  transition: opacity var(--dur) var(--ease), transform 440ms var(--ease-lux);
+}
+/* Row highlighting is :hover-driven only. Keyboard focus is honoured only when
+   the row's own link is focus-visible, so clicking the favourite (which takes
+   focus on the button, not the link) can never leave the row glowing. */
+.coll-row:hover,
+.coll-row:has(.coll-row-hit:focus-visible) {
+  background: rgba(255, 255, 255, 0.028);
+  outline: none;
+}
+.coll-row:hover::before,
+.coll-row:has(.coll-row-hit:focus-visible)::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+.coll-row:has(.coll-row-hit:focus-visible) {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.coll-row-num {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+  transition: color var(--dur) var(--ease);
+}
+.coll-row:hover .coll-row-num,
+.coll-row:has(.coll-row-hit:focus-visible) .coll-row-num {
+  color: var(--accent);
+}
+
+/* number, favourite, PFP and the name + verification badge all share the PFP's
+   true vertical centreline */
+.coll-row-num,
+.coll-row-fav-slot,
+.coll-row-pfp,
+.coll-row-name {
+  align-self: center;
+}
+
+.coll-row-pfp {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, #1b1713, #0e0c0a);
+  transition: transform 420ms var(--ease), border-color var(--dur) var(--ease),
+    box-shadow 420ms var(--ease);
+}
+.coll-row:hover .coll-row-pfp,
+.coll-row:has(.coll-row-hit:focus-visible) .coll-row-pfp {
+  transform: scale(1.08);
+  border-color: rgba(232, 161, 60, 0.55);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(232, 161, 60, 0.12);
+}
+.coll-row-pfp .media-fallback {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.coll-row-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  /* line-height:1 keeps the name's optical centre on the row's centreline,
+     so number / favourite / PFP / name / check share one vertical axis */
+  line-height: 1;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16.5px;
+  letter-spacing: -0.012em;
+  color: var(--text-strong);
+  transition: color var(--dur) var(--ease);
+}
+.coll-row-name .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1;
+}
+.coll-row:hover .coll-row-name,
+.coll-row:has(.coll-row-hit:focus-visible) .coll-row-name {
+  color: #fff;
+}
+.coll-row-check {
+  flex: none;
+  align-self: center;
+  color: var(--accent);
+}
+
+.coll-row-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+  /* values top-align so every metric's primary value shares one line, with its
+     change sitting directly beneath it */
+  align-items: start;
+}
+.coll-row-stat {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.coll-row-k {
+  display: none;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+}
+.coll-row-v {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+/* real 24h change, shown as secondary info beneath its metric value */
+.coll-row-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.coll-row-change[data-change="up"] {
+  color: var(--positive);
+}
+.coll-row-change[data-change="down"] {
+  color: var(--danger);
+}
+.coll-row-change-empty {
+  color: var(--faint);
+  opacity: 0.7;
+}
+
+/* favourite control: sits with the identity cluster, independent of the row */
+.coll-row-fav-slot {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+.coll-row-fav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease), transform 260ms var(--ease-lux);
+}
+.coll-row-fav:hover {
+  color: #f2a89a;
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.03);
+  transform: scale(1.08);
+}
+.coll-row-fav[aria-pressed="true"] {
+  color: var(--accent-bright);
+}
+.coll-row-fav[aria-pressed="true"]:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.coll-row-fav:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.coll-row-fav-empty {
+  width: 32px;
+  height: 32px;
+}
+
+.coll-row-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--faint);
+  opacity: 0.7;
+  transition: transform var(--dur) var(--ease), color var(--dur) var(--ease),
+    opacity var(--dur) var(--ease);
+}
+.coll-row:hover .coll-row-arrow,
+.coll-row:has(.coll-row-hit:focus-visible) .coll-row-arrow {
+  color: var(--accent);
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+@keyframes collRowIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- loading placeholders ------------------------------------------------ */
+
+.coll-row-skeleton {
+  animation: none;
+  pointer-events: none;
+}
+.coll-sk-num {
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+}
+.coll-sk-pfp {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+.coll-sk-name {
+  width: min(56%, 240px);
+  height: 15px;
+  border-radius: 3px;
+}
+.coll-sk-stat {
+  width: 76px;
+  height: 14px;
+  border-radius: 3px;
+}
+.coll-sk-fav {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  justify-self: center;
+}
+.coll-sk-arrow {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  justify-self: end;
+}
+
+/* --- compact directory (alternate view) ---------------------------------- */
+
+/* The same directory, scanned as a two-column field of compact horizontal
+   identity tiles. Each tile keeps the full identity cluster, favourite,
+   navigation and the five real metrics — no artwork panel, no tall card. */
+.coll-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  animation: collViewIn 320ms var(--ease) both;
+}
+@keyframes collViewIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.coll-card {
+  position: relative;
+  display: block;
+  padding: 14px 16px 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(24, 20, 16, 0.45);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35), 0 14px 30px -24px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+  animation: collTileIn 460ms var(--ease-lux) both;
+  animation-delay: calc(min(var(--i, 0), 12) * 50ms);
+  transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+/* the amber highlight travels softly across the active edge on hover only */
+.coll-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    104deg,
+    rgba(232, 161, 60, 0.12),
+    rgba(232, 161, 60, 0.03) 42%,
+    transparent 74%
+  );
+  opacity: 0;
+  transform: scaleX(0.72);
+  transform-origin: left center;
+  transition: opacity var(--dur) var(--ease), transform 440ms var(--ease-lux);
+}
+.coll-card:hover,
+.coll-card:has(.coll-card-hit:focus-visible) {
+  transform: translateY(-3px);
+  border-color: rgba(232, 161, 60, 0.4);
+  background: rgba(30, 25, 19, 0.55);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 22px 40px -26px rgba(0, 0, 0, 0.95);
+}
+.coll-card:hover::before,
+.coll-card:has(.coll-card-hit:focus-visible)::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+@keyframes collTileIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.coll-card-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 14px;
+  outline: none;
+}
+.coll-card > *:not(.coll-card-hit) {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+.coll-card-body {
+  display: grid;
+  gap: 13px;
+}
+.coll-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.coll-card-pfp {
+  flex: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, #1b1713, #0e0c0a);
+  transition: transform 380ms var(--ease), border-color var(--dur) var(--ease);
+}
+.coll-card:hover .coll-card-pfp,
+.coll-card:has(.coll-card-hit:focus-visible) .coll-card-pfp {
+  transform: scale(1.03);
+  border-color: rgba(232, 161, 60, 0.5);
+}
+.coll-card-pfp .media-fallback {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.coll-card-ident {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.coll-card-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15.5px;
+  letter-spacing: -0.012em;
+  line-height: 1;
+  color: var(--text-strong);
+  transition: color var(--dur) var(--ease);
+}
+.coll-card-name .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.coll-card:hover .coll-card-name,
+.coll-card:has(.coll-card-hit:focus-visible) .coll-card-name {
+  color: #fff;
+}
+.coll-card-check {
+  flex: none;
+  align-self: center;
+  color: var(--accent);
+}
+.coll-card-fav-slot {
+  position: relative;
+  z-index: 3;
+  flex: none;
+  display: inline-flex;
+  pointer-events: auto;
+}
+.coll-card-arrow {
+  flex: none;
+  display: inline-flex;
+  color: var(--faint);
+  opacity: 0.7;
+  transition: transform var(--dur) var(--ease), color var(--dur) var(--ease),
+    opacity var(--dur) var(--ease);
+}
+.coll-card:hover .coll-card-arrow,
+.coll-card:has(.coll-card-hit:focus-visible) .coll-card-arrow {
+  color: var(--accent);
+  opacity: 1;
+  transform: translateX(3px);
+}
+.coll-card-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.coll-card-metric {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.coll-card-k {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.coll-card-v {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+.coll-card-metrics .coll-row-change {
+  font-size: 11px;
+}
+.coll-card-fav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease), transform 260ms var(--ease-lux);
+}
+.coll-card-fav:hover {
+  color: #f2a89a;
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.03);
+  transform: scale(1.06);
+}
+.coll-card-fav[aria-pressed="true"] {
+  color: var(--accent-bright);
+}
+.coll-card-fav[aria-pressed="true"]:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.coll-card-fav:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.coll-card-fav-empty {
+  width: 30px;
+  height: 30px;
+}
+
+/* --- responsive ---------------------------------------------------------- */
+
+@media (max-width: 1120px) {
+  .coll-list-head,
+  .coll-row {
+    grid-template-columns: 48px 32px 44px minmax(160px, 1fr) minmax(0, 2.6fr) 22px;
+    gap: 14px;
+  }
+  .coll-list-head-stats,
+  .coll-row-stats {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .coll-card-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .coll-list-head {
+    display: none;
+  }
+  .coll-row {
+    grid-template-columns: 30px 30px 46px minmax(0, 1fr) 22px;
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    row-gap: 8px;
+    padding: 15px 14px;
+  }
+  .coll-row-num {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+  }
+  .coll-row-fav-slot {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+  .coll-row-pfp {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+  .coll-row-name {
+    grid-column: 4;
+    grid-row: 1;
+  }
+  .coll-row-arrow {
+    grid-column: 5;
+    grid-row: 1;
+    align-self: center;
+  }
+  .coll-row-stats {
+    grid-column: 4 / -1;
+    grid-row: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .coll-row-stat {
+    flex: 1 1 0;
+  }
+  /* collapse the least important metric first on narrow screens */
+  .coll-row-stat[data-rank="4"] {
+    display: none;
+  }
+  .coll-row-k {
+    display: block;
+    color: var(--muted);
+  }
+}
+
+@media (max-width: 560px) {
+  .coll-index-body {
+    padding-top: 36px;
+    padding-bottom: 64px;
+  }
+  .coll-controls .mkt-search {
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+  .coll-controls-end {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+  .coll-controls-end .mkt-control {
+    flex: 1 1 auto;
+  }
+  .coll-controls-end .mkt-sort {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .coll-grid {
+    grid-template-columns: 1fr;
+  }
+  .coll-card-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .coll-card-metric[data-rank="3"],
+  .coll-card-metric[data-rank="4"] {
+    display: none;
+  }
+  .coll-row {
+    column-gap: 10px;
+  }
+  .coll-row-stat[data-rank="3"] {
+    display: none;
+  }
+  .coll-row-stat {
+    gap: 3px;
+  }
+  .coll-row-v {
+    font-size: 12px;
+  }
+  .coll-row-change {
+    font-size: 11px;
+  }
 }
 
 /* ============================================================================

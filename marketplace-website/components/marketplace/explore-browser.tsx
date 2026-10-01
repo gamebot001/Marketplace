@@ -1,23 +1,35 @@
 "use client";
 
 /**
- * Explore everything — marketplace discovery with a strong hierarchy.
+ * Explore — the global NFT discovery hub.
  *
- * Filters: Collection · Price · Verified · Status
+ * This is the complete marketplace surface: every listing across every
+ * registered collection, with search, collection/status/price/trait filters
+ * and sorting. It is deliberately distinct from the curated homepage and from
+ * a collection page (which browses one project only).
+ *
+ * Filters: Search · Collection · Status · Price range · Trait · Verified
  * Sort: Recently Listed · Price Low → High · Price High → Low · Recently Sold
  *
- * Controls are compact and quiet; the grid is the protagonist. All data is
- * real; empty and error states are designed, not improvised.
+ * Every control reflects real data only; traits appear only when the API
+ * actually returned attributes, and empty/error states are designed.
  */
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, LayoutGrid, Square } from "lucide-react";
+import {
+  Compass,
+  LayoutGrid,
+  Search,
+  SlidersHorizontal,
+  Square,
+} from "lucide-react";
 import { useListingsWithAssets } from "@/lib/api/hooks";
 import {
   DEFAULT_FILTERS,
   buildListingViews,
+  buildTraitGroups,
   filterListingViews,
   type ExploreFilters,
   type ExploreSort,
@@ -44,26 +56,44 @@ export function ExploreBrowser() {
   const { data, error, loading } = useListingsWithAssets({ status: null });
 
   useEffect(() => {
-    setFilters((f) => ({ ...f, search: initialQuery, collectionSlug: initialCollection }));
+    setFilters((f) => ({
+      ...f,
+      search: initialQuery,
+      collectionSlug: initialCollection,
+      traitFilter: "",
+    }));
   }, [initialQuery, initialCollection]);
 
-  const collections = data?.collections ?? [];
+  const collections = useMemo(() => data?.collections ?? [], [data]);
+  const assets = useMemo(() => data?.assets ?? {}, [data]);
   const views = useMemo(
-    () =>
-      buildListingViews(
-        data?.listings ?? [],
-        data?.assets ?? {},
-        data?.collections ?? []
-      ),
-    [data]
+    () => buildListingViews(data?.listings ?? [], assets, collections),
+    [data, assets, collections]
   );
   const filtered = useMemo(
-    () => filterListingViews(views, filters),
-    [views, filters]
+    () => filterListingViews(views, filters, assets),
+    [views, filters, assets]
+  );
+
+  // Trait facets follow the collection filter, so the available traits always
+  // describe the set the collector is actually browsing.
+  const facetViews = useMemo(
+    () =>
+      filters.collectionSlug
+        ? views.filter((v) => v.collectionSlug === filters.collectionSlug)
+        : views,
+    [views, filters.collectionSlug]
+  );
+  const traitGroups = useMemo(
+    () => buildTraitGroups(facetViews, assets),
+    [facetViews, assets]
   );
 
   const update = <K extends keyof ExploreFilters>(key: K, value: ExploreFilters[K]) =>
     setFilters((f) => ({ ...f, [key]: value }));
+
+  const selectCollection = (slug: string) =>
+    setFilters((f) => ({ ...f, collectionSlug: slug, traitFilter: "" }));
 
   const hasActiveFilters =
     filters.search ||
@@ -71,12 +101,44 @@ export function ExploreBrowser() {
     filters.priceMin ||
     filters.priceMax ||
     filters.verifiedOnly ||
+    filters.traitFilter ||
     filters.status !== DEFAULT_FILTERS.status;
 
+  const listedCount = useMemo(
+    () => views.filter((v) => v.listing.status === "active").length,
+    [views]
+  );
+  const activeCollections = useMemo(
+    () => new Set(views.map((v) => v.collectionSlug).filter(Boolean)).size,
+    [views]
+  );
+
   return (
-    <div className="container" style={{ paddingTop: 32, paddingBottom: 40 }}>
+    <div className="container" style={{ paddingTop: 28, paddingBottom: 40 }}>
       <Reveal>
-        <div className="filter-bar" role="search">
+        <div className="explore-scope">
+          <span className="explore-scope-mark" aria-hidden>
+            <Compass size={15} />
+          </span>
+          <p>
+            <strong>Global discovery.</strong> Every listing across every
+            registered collection — search, narrow by collection, status, price
+            or trait, then sort. The homepage is curated; a collection page is
+            collection-specific.
+          </p>
+          {!loading && !error && (
+            <span className="explore-scope-stats mono">
+              {listedCount} listed
+              <span aria-hidden> · </span>
+              {activeCollections}{" "}
+              {activeCollections === 1 ? "collection" : "collections"}
+            </span>
+          )}
+        </div>
+      </Reveal>
+
+      <Reveal>
+        <div className="filter-bar" role="search" style={{ marginTop: 18 }}>
           <div className="search-field">
             <Search size={16} aria-hidden />
             <input
@@ -93,7 +155,7 @@ export function ExploreBrowser() {
             className="select"
             aria-label="Filter by collection"
             value={filters.collectionSlug}
-            onChange={(e) => update("collectionSlug", e.target.value)}
+            onChange={(e) => selectCollection(e.target.value)}
           >
             <option value="">All collections</option>
             {collections.map((c) => (
@@ -134,6 +196,27 @@ export function ExploreBrowser() {
             />
             <span>SOL</span>
           </label>
+
+          {traitGroups.length > 0 && (
+            <select
+              className="select"
+              aria-label="Filter by trait"
+              value={filters.traitFilter}
+              onChange={(e) => update("traitFilter", e.target.value)}
+            >
+              <option value="">All traits</option>
+              {traitGroups.map((group) =>
+                group.values.map((value) => (
+                  <option
+                    key={`${group.trait}-${value}`}
+                    value={`${group.trait}\u0000${value}`}
+                  >
+                    {group.trait}: {value}
+                  </option>
+                ))
+              )}
+            </select>
+          )}
 
           <button
             className={`btn btn-sm ${filters.verifiedOnly ? "btn-accent" : "btn-outline"}`}

@@ -3,25 +3,16 @@ import { CollectionsBrowser } from "@/components/marketplace/collections-browser
 
 export const metadata: Metadata = {
   title: "Collections",
-  description: "Verified Solana collections registered on the Zecians Marketplace.",
+  description:
+    "Discover verified Solana collections on the Zecians Marketplace — explore their work and find the projects you want to follow, collect, or learn more about.",
 };
 
 export default function CollectionsPage() {
   return (
-    <>
-      <div className="page-head">
-        <div className="container">
-          <div className="eyebrow">Collections</div>
-          <h1>Projects on the platform.</h1>
-          <p className="lede">
-            Each collection is registered, verifiable, and addressed on-chain.
-            Zecians is one collection among many.
-          </p>
-        </div>
-      </div>
-      <div className="container" style={{ paddingTop: 34, paddingBottom: 40 }}>
+    <div className="coll-index">
+      <div className="container coll-index-body">
         <CollectionsBrowser />
       </div>
-    </>
+    </div>
   );
 }

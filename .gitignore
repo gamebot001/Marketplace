@@ -26,3 +26,5 @@ marketplace_backend/data/*.lock
 # Editor
 .vscode/
 .idea/
+
+/marketplace-website/public/

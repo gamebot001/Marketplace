@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Featured collections — premium presentation panels.
+ * Flagship collection spotlight.
  *
- * Large artwork area (~half the panel) built from the collection's real
- * artwork, with the real PFP as a prominent identity badge. The information
- * panel carries name, verification, description and a compact metric strip:
- * floor / volume / 24h / items, plus the live listed count.
+ * One intentional panel: large real collection artwork with the real PFP as the
+ * identity mark, then name, verification, description and a compact metric
+ * strip (floor / volume / 24h / items) plus the live listed count.
  *
- * Hover: crop shift, brightness response, amber border accent, PFP responds.
+ * Hover is CSS only — a crop shift, a brightness response and an amber edge.
+ * No pointer listeners, no per-frame reads, no backdrop blur.
  */
 
 import Link from "next/link";
@@ -20,14 +20,8 @@ import {
   Layers,
 } from "lucide-react";
 import { Artwork } from "@/components/ui/artwork";
-import {
-  resolveImageUrl,
-  formatSol,
-} from "@/lib/format";
-import {
-  demoCollectionMedia,
-  demoCollectionGlyph,
-} from "@/lib/demo-marketplace-data";
+import { resolveImageUrl, formatSol } from "@/lib/format";
+import { demoCollectionMedia } from "@/lib/demo-marketplace-data";
 import type { MarketplaceCollection } from "@/lib/api/types";
 import type { DemoCollectionStats } from "@/lib/demo-marketplace-data";
 
@@ -45,31 +39,14 @@ export function FeaturedCollectionCard({
   const verified = collection.verification_status === "verified";
   const media = demoCollectionMedia(collection.slug);
   const artwork = media?.artwork ?? resolveImageUrl(collection.image);
-  const pfp = media?.pfp ?? resolveImageUrl(collection.image);
+  // The PFP is a separate identity mark only when distinct artwork exists.
+  const pfp = media?.pfp ?? null;
   const change = stats?.change24hPercent ?? null;
-
-  const onMove = (e: React.PointerEvent<HTMLElement>) => {
-    const el = e.currentTarget;
-    const mediaEl = el.querySelector<HTMLElement>(".fc-media");
-    if (!mediaEl) return;
-    const rect = mediaEl.getBoundingClientRect();
-    mediaEl.style.setProperty("--px", `${(((e.clientX - rect.left) / rect.width) * 100).toFixed(1)}%`);
-    mediaEl.style.setProperty("--py", `${(((e.clientY - rect.top) / rect.height) * 100).toFixed(1)}%`);
-    mediaEl.style.setProperty("--glow", "1");
-  };
-
-  const onLeave = (e: React.PointerEvent<HTMLElement>) => {
-    e.currentTarget
-      .querySelector<HTMLElement>(".fc-media")
-      ?.style.setProperty("--glow", "0");
-  };
 
   return (
     <Link
       href={`/collections/${collection.slug}`}
       className="fc-card"
-      onPointerMove={onMove}
-      onPointerLeave={onLeave}
       aria-label={`View collection ${collection.name}`}
     >
       <div className="fc-media">
@@ -79,9 +56,6 @@ export function FeaturedCollectionCard({
           sizes="(max-width: 760px) 100vw, 480px"
           priority={index === 0}
         />
-        <span className="fc-glyph" aria-hidden="true">
-          {demoCollectionGlyph(collection.name)}
-        </span>
         {pfp && (
           <span className="fc-pfp" aria-hidden="true">
             <Artwork src={pfp} alt="" sizes="72px" />
@@ -90,12 +64,6 @@ export function FeaturedCollectionCard({
       </div>
 
       <div className="fc-body">
-        {typeof index === "number" && (
-          <span className="fc-index" aria-hidden="true">
-            {String(index + 1).padStart(2, "0")}
-          </span>
-        )}
-
         <span className="fc-eyebrow">
           {collection.flagship ? "Flagship collection" : "Featured collection"}
         </span>

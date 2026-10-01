@@ -5,66 +5,42 @@
  *
  * Artwork dominates (square crop, full-bleed), metadata stays lean:
  * a listed chip, the piece name, then price + status. On hover the card lifts,
- * the artwork scales, a cursor illumination tracks the pointer (CSS vars only —
- * no per-frame layout reads), and a view arrow appears.
+ * the artwork scales and a view arrow appears.
  *
- * Clicking opens the in-page overlay (onSelect) instead of navigating away, so
- * exploring a piece never leaves the collection. The collection page is the
- * only caller, so this is scoped to it rather than altering the shared
+ * Clicking opens the shared in-context NFT quick view instead of navigating
+ * away, so exploring a piece never leaves the collection. The collection page
+ * is the only caller, so this is scoped to it rather than altering the shared
  * .nft-card used across explore/home.
  */
 
-import { useCallback, useRef } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Heart } from "lucide-react";
 import { Artwork } from "@/components/ui/artwork";
 import { formatSol } from "@/lib/format";
 import type { ListingView } from "@/lib/marketplace/views";
+import { useNftQuickView } from "@/components/marketplace/nft-quick-view";
+import { useWatchlist } from "@/components/marketplace/watchlist";
 import styles from "./collection-view.module.css";
 
 export function CollectibleCard({
   view,
   priority = false,
-  onSelect,
 }: {
   view: ListingView;
   priority?: boolean;
-  onSelect: (view: ListingView) => void;
 }) {
   const { listing } = view;
-  const mediaRef = useRef<HTMLDivElement>(null);
-
-  const onMove = useCallback((e: React.PointerEvent) => {
-    const el = mediaRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    el.style.setProperty(
-      "--px",
-      `${(((e.clientX - rect.left) / rect.width) * 100).toFixed(1)}%`
-    );
-    el.style.setProperty(
-      "--py",
-      `${(((e.clientY - rect.top) / rect.height) * 100).toFixed(1)}%`
-    );
-    el.style.setProperty("--glow", "1");
-  }, []);
-
-  const onLeave = useCallback(() => {
-    mediaRef.current?.style.setProperty("--glow", "0");
-  }, []);
+  const { open } = useNftQuickView();
+  const { has, toggle } = useWatchlist();
+  const faved = has(listing.asset_address);
 
   return (
     <button
       type="button"
       className={styles.card}
-      onClick={() => onSelect(view)}
+      onClick={() => open({ address: listing.asset_address, view })}
       aria-label={`${view.name} — ${formatSol(listing.price_lamports)}`}
     >
-      <div
-        className={styles.cardMedia}
-        ref={mediaRef}
-        onPointerMove={onMove}
-        onPointerLeave={onLeave}
-      >
+      <div className={styles.cardMedia}>
         {listing.status === "active" && (
           <span className={`badge badge-gold ${styles.cardChip}`}>
             <span className="status-dot" aria-hidden />
@@ -73,6 +49,20 @@ export function CollectibleCard({
         )}
         <span className={styles.cardArrow} aria-hidden="true">
           <ArrowUpRight size={14} />
+        </span>
+        <span
+          className={styles.cardWatch}
+          role="button"
+          tabIndex={-1}
+          aria-pressed={faved}
+          aria-label={faved ? "Remove from watchlist" : "Add to watchlist"}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggle(listing.asset_address);
+          }}
+        >
+          <Heart size={13} fill={faved ? "currentColor" : "none"} aria-hidden />
         </span>
         <Artwork
           src={view.image}

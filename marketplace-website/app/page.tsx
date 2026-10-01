@@ -53,6 +53,7 @@ function trendingCards(views: ListingView[]): HomeNftCard[] {
     href: `/nft/${view.listing.asset_address}`,
     price: formatSol(view.listing.price_lamports),
     status: view.listing.status,
+    address: view.listing.asset_address,
   }));
 }
 

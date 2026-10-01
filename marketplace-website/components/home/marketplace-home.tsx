@@ -29,6 +29,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { DesignHero } from "@/components/home/design-hero";
+import { useNftQuickView } from "@/components/marketplace/nft-quick-view";
 
 export interface HomeStatsCell {
   value: string;
@@ -49,6 +50,7 @@ export interface HomeNftCard {
   href: string;
   price: string | null;
   status: string | null;
+  address?: string;
 }
 
 export interface HomeCollageItem {
@@ -82,6 +84,7 @@ function CardArt({ src, alt }: { src: string | null; alt: string }) {
  * remount or a page-level repaint.
  */
 function TrendingRail({ items }: { items: HomeNftCard[] }) {
+  const { open } = useNftQuickView();
   const railRef = useRef<HTMLDivElement>(null);
   const fillRef = useRef<HTMLSpanElement>(null);
   const prevRef = useRef<HTMLButtonElement>(null);
@@ -182,6 +185,14 @@ function TrendingRail({ items }: { items: HomeNftCard[] }) {
               role="listitem"
               className="mk-rail-card"
               style={{ "--i": i } as CSSProperties}
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)
+                  return;
+                const address = nft.address ?? nft.href.replace(/^\/nft\//, "");
+                if (!address) return;
+                e.preventDefault();
+                open({ address });
+              }}
             >
               <span className="mk-rail-art">
                 {nft.image ? (

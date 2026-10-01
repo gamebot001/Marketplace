@@ -9,14 +9,17 @@ import {
   Wallet as WalletIcon,
   ExternalLink,
   HandCoins,
+  Heart,
 } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useAsset, useListingsWithAssets } from "@/lib/api/hooks";
 import { buildListingView } from "@/lib/marketplace/views";
 import type { ListingView } from "@/lib/marketplace/views";
-import { bpsToPercent, formatSol, resolveImageUrl } from "@/lib/format";
+import { bpsToPercent, formatSol, relativeTime, resolveImageUrl } from "@/lib/format";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
-import { DEMO_MODE } from "@/lib/demo-marketplace-data";
+import { DEMO_MODE, DEMO_OFFERS } from "@/lib/demo-marketplace-data";
+import { NETWORK_LABEL } from "@/lib/config";
+import { useWatchlist } from "@/components/marketplace/watchlist";
 import { Artwork } from "@/components/ui/artwork";
 import { VerifiedBadge, StatusBadge } from "@/components/ui/badges";
 import { Address } from "@/components/ui/address";
@@ -44,10 +47,16 @@ export function NftDetail({ assetAddress }: { assetAddress: string }) {
   }, []);
 
   const connectedAddress = publicKey?.toBase58() ?? null;
+  const { has, toggle } = useWatchlist();
 
-  const { activeView, lastView } = useMemo(() => {
+  const { activeView, lastView, history } = useMemo(() => {
+    const empty = {
+      activeView: null as ListingView | null,
+      lastView: null as ListingView | null,
+      history: [] as ListingView[],
+    };
     const data = listingsState.data;
-    if (!data || !asset) return { activeView: null as ListingView | null, lastView: null as ListingView | null };
+    if (!data || !asset) return empty;
     const assets = { ...data.assets, [asset.asset_address]: asset };
     const matching = data.listings
       .filter((l) => l.asset_address === asset.asset_address)
@@ -57,6 +66,7 @@ export function NftDetail({ assetAddress }: { assetAddress: string }) {
     return {
       activeView: active ? buildListingView(active, assets, data.collections) : null,
       lastView: last ? buildListingView(last, assets, data.collections) : null,
+      history: matching.map((l) => buildListingView(l, assets, data.collections)),
     };
   }, [listingsState.data, asset]);
 
@@ -337,6 +347,20 @@ export function NftDetail({ assetAddress }: { assetAddress: string }) {
                 This asset is owned by your connected wallet.
               </div>
             )}
+
+            <button
+              type="button"
+              className="btn btn-ghost btn-block"
+              aria-pressed={has(asset.asset_address)}
+              onClick={() => toggle(asset.asset_address)}
+            >
+              <Heart
+                size={14}
+                fill={has(asset.asset_address) ? "currentColor" : "none"}
+                aria-hidden
+              />
+              {has(asset.asset_address) ? "On your watchlist" : "Add to watchlist"}
+            </button>
           </div>
 
           <div className="attr-grid">
@@ -364,14 +388,18 @@ export function NftDetail({ assetAddress }: { assetAddress: string }) {
             </div>
             <div className="attr">
               <div className="k">Network</div>
-              <div className="v">Solana Devnet</div>
+              <div className="v">{NETWORK_LABEL}</div>
             </div>
-            <div className="attr">
-              <div className="k">Verification</div>
-              <div className="v">
-                {asset.verified_collection ? "Verified collection" : "Unverified"}
+            {collectionHref && displayView && (
+              <div className="attr">
+                <div className="k">Collection</div>
+                <div className="v">
+                  <Link href={collectionHref} style={{ color: "var(--accent)" }}>
+                    {displayView.collectionName}
+                  </Link>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {asset.attributes && asset.attributes.length > 0 && (
@@ -407,6 +435,55 @@ export function NftDetail({ assetAddress }: { assetAddress: string }) {
             <div className="prose">
               <p>{asset.description}</p>
             </div>
+          )}
+
+          {history.length > 0 && (
+            <div style={{ display: "grid", gap: 10 }}>
+              <div className="eyebrow">Listing history</div>
+              <div className="panel">
+                {history.slice(0, 8).map((entry) => (
+                  <div
+                    key={entry.listing.listing_id}
+                    className="detail-row"
+                    style={{ padding: "12px 16px" }}
+                  >
+                    <dt style={{ textTransform: "capitalize" }}>{entry.listing.status}</dt>
+                    <dd style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                      <span className="mono">{formatSol(entry.listing.price_lamports)}</span>
+                      <span className="mono" style={{ color: "var(--muted)" }}>
+                        {relativeTime(entry.listing.created_at) ?? "—"}
+                      </span>
+                    </dd>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {DEMO_MODE && DEMO_OFFERS.some((o) => o.asset === asset.asset_address) && (
+            <div style={{ display: "grid", gap: 10 }}>
+              <div className="eyebrow">Offers</div>
+              <div className="panel">
+                {DEMO_OFFERS.filter((o) => o.asset === asset.asset_address).map((offer) => (
+                  <div
+                    key={offer.id}
+                    className="detail-row"
+                    style={{ padding: "12px 16px" }}
+                  >
+                    <dt>
+                      <Address value={offer.from} head={4} tail={4} />
+                    </dt>
+                    <dd className="mono">{formatSol(offer.amountLamports)}</dd>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {history.length > 0 && (
+            <span className="demo-note">
+              Listing history is drawn from listings observed on this network.
+            </span>
           )}
         </Reveal>
       </div>

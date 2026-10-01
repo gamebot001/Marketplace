@@ -5,7 +5,8 @@ import { CardSkeletons } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
   title: "Explore",
-  description: "Discover and filter active listings across verified Solana collections.",
+  description:
+    "The global NFT discovery hub — search and filter every listing across verified Solana collections.",
 };
 
 export default function ExplorePage() {
@@ -14,10 +15,12 @@ export default function ExplorePage() {
       <div className="page-head">
         <div className="container">
           <div className="eyebrow">Explore</div>
-          <h1>Every listing, one surface.</h1>
+          <h1>Discover the whole marketplace.</h1>
           <p className="lede">
-            Search across collections and filter active listings by price and
-            verification status.
+            The complete cross-collection surface. Search every listing, narrow
+            by collection, status, price range or trait, and sort the way you
+            want — where the homepage curates and a collection page stays
+            focused on one project, Explore shows it all.
           </p>
         </div>
       </div>

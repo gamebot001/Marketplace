@@ -12,8 +12,9 @@
  *  · Flip NEXT_PUBLIC_DEMO_MARKETPLACE=0 (or remove this module and its single
  *    call-site in lib/api/client.ts) to return to the real API.
  *
- * Artwork: 24 REAL local files copied from ~/Desktop/collection-test into
- * /public/demo-marketplace — 4 collections × (1 PFP + 5 NFT artworks).
+ * Artwork: REAL local files copied from ~/Desktop/collection-test into
+ * /public/demo-marketplace — every collection gets its own PFP plus a set of
+ * NFT artworks (name-normalised to /demo-marketplace/<slug>/).
  */
 
 import type {
@@ -48,7 +49,7 @@ const W10 = "Rkkn1rCXULWNycD6nHxwEnKXxEAryaHKPs51Ew5r3ptW";
 export const DEMO_WALLETS = [W1, W2, W3, W4, W5, W6, W7, W8, W9, W10];
 
 /* ============================================================================
-   Collections — the four real projects, folder names used as display names
+   Collections — every real project in the test folder, slug used as the key
    ========================================================================== */
 
 const SOL = 1_000_000_000;
@@ -60,6 +61,12 @@ export interface DemoCollectionStats {
   supply: number;
   listedCount: number;
   sales24h: number;
+  /* Per-metric 24h change. Real values only — null carries through to the UI
+     as "—" so a metric without a reported change never shows an invented one. */
+  floorChange24hPercent?: number | null;
+  volumeChange24hPercent?: number | null;
+  salesChange24hPercent?: number | null;
+  listedChange24hPercent?: number | null;
 }
 
 export const DEMO_COLLECTIONS: MarketplaceCollection[] = [
@@ -127,6 +134,86 @@ export const DEMO_COLLECTIONS: MarketplaceCollection[] = [
     flagship: false,
     collection_id: "demo-dga",
   },
+  {
+    slug: "critters-quest",
+    name: "Critters Quest",
+    description:
+      "A playful roster of adventuring critters, each a hand-illustrated character with its own quest archetype and palette.",
+    image: "/demo-marketplace/critters-quest/pfp.avif",
+    standard: "Metaplex Core",
+    verification_status: "verified",
+    marketplace_status: "live",
+    collection_address: "DemoCrittersColl-address-111111111111111111111111",
+    chain_deployed: true,
+    royalty_bps: 500,
+    supply: 4444,
+    flagship: false,
+    collection_id: "demo-critters-quest",
+  },
+  {
+    slug: "famous-fox-federation",
+    name: "Famous Fox Federation",
+    description:
+      "A long-standing Solana collective of sharply dressed foxes, built around a strong community and utility ecosystem.",
+    image: "/demo-marketplace/famous-fox-federation/pfp.webp",
+    standard: "Metaplex Core",
+    verification_status: "verified",
+    marketplace_status: "live",
+    collection_address: "DemoFoxColl-address-11111111111111111111111111111",
+    chain_deployed: true,
+    royalty_bps: 500,
+    supply: 7777,
+    flagship: false,
+    collection_id: "demo-famous-fox-federation",
+  },
+  {
+    slug: "otc-desks",
+    name: "OTC Desks",
+    description:
+      "A curated trading-desk collection where each piece represents a distinct over-the-counter desk identity.",
+    image: "/demo-marketplace/otc-desks/pfp.avif",
+    standard: "Metaplex Core",
+    verification_status: "verified",
+    marketplace_status: "live",
+    collection_address: "DemoOtcColl-address-111111111111111111111111111111",
+    chain_deployed: true,
+    royalty_bps: 500,
+    supply: 2222,
+    flagship: false,
+    collection_id: "demo-otc-desks",
+  },
+  {
+    slug: "smb-gen2",
+    name: "SMB Gen2",
+    description:
+      "The second generation of the Solana Monkey Business lineage — pixel monkeys with a deep, historical trading record.",
+    image: "/demo-marketplace/smb-gen2/pfp.avif",
+    standard: "Metaplex Core",
+    verification_status: "verified",
+    marketplace_status: "live",
+    collection_address: "DemoSmbColl-address-111111111111111111111111111111",
+    chain_deployed: true,
+    royalty_bps: 500,
+    supply: 5000,
+    flagship: false,
+    collection_id: "demo-smb-gen2",
+  },
+  {
+    slug: "stonk-cats",
+    name: "Stonk Cats",
+    description:
+      "A finance-flavoured feline collection — expressive cats rendered for a market-obsessed collecting crowd.",
+    image: "/demo-marketplace/stonk-cats/pfp.avif",
+    standard: "Metaplex Core",
+    verification_status: "verified",
+    marketplace_status: "live",
+    collection_address: "DemoStonkColl-address-11111111111111111111111111111",
+    chain_deployed: true,
+    royalty_bps: 500,
+    supply: 10000,
+    flagship: false,
+    collection_id: "demo-stonk-cats",
+  },
 ];
 
 const DEMO_COLLECTION_STATS: Record<string, DemoCollectionStats> = {
@@ -137,6 +224,10 @@ const DEMO_COLLECTION_STATS: Record<string, DemoCollectionStats> = {
     supply: 9999,
     listedCount: 4,
     sales24h: 11,
+    floorChange24hPercent: null,
+    volumeChange24hPercent: 6.2,
+    salesChange24hPercent: null,
+    listedChange24hPercent: null,
   },
   "mad-lads": {
     floorLamports: 12.4 * SOL,
@@ -145,6 +236,10 @@ const DEMO_COLLECTION_STATS: Record<string, DemoCollectionStats> = {
     supply: 9999,
     listedCount: 3,
     sales24h: 7,
+    floorChange24hPercent: null,
+    volumeChange24hPercent: 3.1,
+    salesChange24hPercent: null,
+    listedChange24hPercent: null,
   },
   degods: {
     floorLamports: 5.2 * SOL,
@@ -153,6 +248,10 @@ const DEMO_COLLECTION_STATS: Record<string, DemoCollectionStats> = {
     supply: 9999,
     listedCount: 3,
     sales24h: 9,
+    floorChange24hPercent: null,
+    volumeChange24hPercent: -1.8,
+    salesChange24hPercent: null,
+    listedChange24hPercent: null,
   },
   dga: {
     floorLamports: 3.6 * SOL,
@@ -161,6 +260,70 @@ const DEMO_COLLECTION_STATS: Record<string, DemoCollectionStats> = {
     supply: 5000,
     listedCount: 4,
     sales24h: 5,
+    floorChange24hPercent: null,
+    volumeChange24hPercent: 9.4,
+    salesChange24hPercent: null,
+    listedChange24hPercent: null,
+  },
+  "critters-quest": {
+    floorLamports: 2.4 * SOL,
+    volumeLamports: 54.8 * SOL,
+    change24hPercent: 4.5,
+    supply: 4444,
+    listedCount: 6,
+    sales24h: 12,
+    floorChange24hPercent: null,
+    volumeChange24hPercent: 4.5,
+    salesChange24hPercent: null,
+    listedChange24hPercent: null,
+  },
+  "famous-fox-federation": {
+    floorLamports: 1.8 * SOL,
+    volumeLamports: 33.5 * SOL,
+    change24hPercent: -2.3,
+    supply: 7777,
+    listedCount: 5,
+    sales24h: 8,
+    floorChange24hPercent: null,
+    volumeChange24hPercent: -2.3,
+    salesChange24hPercent: null,
+    listedChange24hPercent: null,
+  },
+  "otc-desks": {
+    floorLamports: 6.7 * SOL,
+    volumeLamports: 61.2 * SOL,
+    change24hPercent: 1.9,
+    supply: 2222,
+    listedCount: 2,
+    sales24h: 4,
+    floorChange24hPercent: null,
+    volumeChange24hPercent: 1.9,
+    salesChange24hPercent: null,
+    listedChange24hPercent: null,
+  },
+  "smb-gen2": {
+    floorLamports: 9.3 * SOL,
+    volumeLamports: 120.4 * SOL,
+    change24hPercent: 5.7,
+    supply: 5000,
+    listedCount: 7,
+    sales24h: 14,
+    floorChange24hPercent: null,
+    volumeChange24hPercent: 5.7,
+    salesChange24hPercent: null,
+    listedChange24hPercent: null,
+  },
+  "stonk-cats": {
+    floorLamports: 0.9 * SOL,
+    volumeLamports: 74.6 * SOL,
+    change24hPercent: 11.2,
+    supply: 10000,
+    listedCount: 9,
+    sales24h: 18,
+    floorChange24hPercent: null,
+    volumeChange24hPercent: 11.2,
+    salesChange24hPercent: null,
+    listedChange24hPercent: null,
   },
 };
 
@@ -192,6 +355,26 @@ const DEMO_COLLECTION_MEDIA: Record<string, { artwork: string; secondary: string
   dga: {
     artwork: "/demo-marketplace/dga/dga-02.avif",
     secondary: "/demo-marketplace/dga/dga-05.avif",
+  },
+  "critters-quest": {
+    artwork: "/demo-marketplace/critters-quest/art-01.avif",
+    secondary: "/demo-marketplace/critters-quest/art-02.avif",
+  },
+  "famous-fox-federation": {
+    artwork: "/demo-marketplace/famous-fox-federation/art-01.avif",
+    secondary: "/demo-marketplace/famous-fox-federation/art-02.avif",
+  },
+  "otc-desks": {
+    artwork: "/demo-marketplace/otc-desks/art-01.avif",
+    secondary: "/demo-marketplace/otc-desks/art-02.avif",
+  },
+  "smb-gen2": {
+    artwork: "/demo-marketplace/smb-gen2/art-01.avif",
+    secondary: "/demo-marketplace/smb-gen2/art-02.avif",
+  },
+  "stonk-cats": {
+    artwork: "/demo-marketplace/stonk-cats/art-01.avif",
+    secondary: "/demo-marketplace/stonk-cats/art-02.avif",
   },
 };
 

@@ -3,6 +3,8 @@ import "./globals.css";
 import "./marketplace-chrome.css";
 import { Providers } from "@/components/wallet/wallet-provider";
 import { TransactionProvider } from "@/components/marketplace/transaction/transaction-provider";
+import { WatchlistProvider } from "@/components/marketplace/watchlist";
+import { NftQuickViewProvider } from "@/components/marketplace/nft-quick-view";
 import { Atmosphere } from "@/components/atmosphere";
 import { ScrollProgress } from "@/components/ui/motion";
 import { OverlayHostSentinel } from "@/components/ui/overlay-portal";
@@ -33,15 +35,19 @@ export default function RootLayout({
         </a>
         <Providers>
           <TransactionProvider>
-            <Atmosphere />
-            <ScrollProgress />
-            <div className="mp-shell">
-              <ChromeTop />
-              <main className="mp-main" id="main">
-                {children}
-              </main>
-              <ChromeBottom />
-            </div>
+            <WatchlistProvider>
+              <NftQuickViewProvider>
+                <Atmosphere />
+                <ScrollProgress />
+                <div className="mp-shell">
+                  <ChromeTop />
+                  <main className="mp-main" id="main">
+                    {children}
+                  </main>
+                  <ChromeBottom />
+                </div>
+              </NftQuickViewProvider>
+            </WatchlistProvider>
           </TransactionProvider>
         </Providers>
         <div id="marketplace-overlays" />

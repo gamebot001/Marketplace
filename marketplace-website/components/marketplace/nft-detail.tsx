@@ -8,7 +8,6 @@ import {
   XCircle,
   Wallet as WalletIcon,
   ExternalLink,
-  HandCoins,
   Heart,
 } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -17,7 +16,7 @@ import { buildListingView } from "@/lib/marketplace/views";
 import type { ListingView } from "@/lib/marketplace/views";
 import { bpsToPercent, formatSol, relativeTime, resolveImageUrl } from "@/lib/format";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
-import { DEMO_MODE, DEMO_OFFERS } from "@/lib/demo-marketplace-data";
+import { DEMO_MODE } from "@/lib/demo-marketplace-data";
 import { NETWORK_LABEL } from "@/lib/config";
 import { useWatchlist } from "@/components/marketplace/watchlist";
 import { Artwork } from "@/components/ui/artwork";
@@ -123,26 +122,13 @@ export function NftDetail({ assetAddress }: { assetAddress: string }) {
     );
 
   const renderActions = () => {
-    const demoNote = DEMO_MODE && (
-      <button
-        type="button"
-        className="btn btn-outline btn-block"
-        onClick={() => demoBlocked("Make Offer")}
-      >
-        <HandCoins size={15} /> Make Offer
-      </button>
-    );
-
     if (!activeView) {
       // No active listing: only the current owner may list.
       if (!connected) {
         return (
-          <>
-            <button className="btn btn-primary btn-block btn-lg" onClick={openWallet}>
-              <WalletIcon size={16} /> Connect to list
-            </button>
-            {demoNote}
-          </>
+          <button className="btn btn-primary btn-block btn-lg" onClick={openWallet}>
+            <WalletIcon size={16} /> Connect Wallet
+          </button>
         );
       }
       if (isOwner) {
@@ -172,24 +158,18 @@ export function NftDetail({ assetAddress }: { assetAddress: string }) {
         );
       }
       return (
-        <>
-          <button className="btn btn-outline btn-block btn-lg" disabled>
-            Not for sale
-          </button>
-          {demoNote}
-        </>
+        <button className="btn btn-outline btn-block btn-lg" disabled>
+          Not for sale
+        </button>
       );
     }
 
     const view = activeView;
     if (!connected) {
       return (
-        <>
-          <button className="btn btn-primary btn-block btn-lg" onClick={openWallet}>
-            <WalletIcon size={16} /> Connect to buy
-          </button>
-          {demoNote}
-        </>
+        <button className="btn btn-primary btn-block btn-lg" onClick={openWallet}>
+          <WalletIcon size={16} /> Connect Wallet
+        </button>
       );
     }
     if (isSeller) {
@@ -239,17 +219,14 @@ export function NftDetail({ assetAddress }: { assetAddress: string }) {
       );
     }
     return (
-      <div style={{ display: "grid", gap: 10 }}>
-        <button
-          className="btn btn-primary btn-block btn-lg"
-          onClick={() =>
-            DEMO_MODE ? demoBlocked("Buy Now") : request({ kind: "buy", view })
-          }
-        >
-          <ShoppingBag size={16} /> Buy Now
-        </button>
-        {demoNote}
-      </div>
+      <button
+        className="btn btn-primary btn-block btn-lg"
+        onClick={() =>
+          DEMO_MODE ? demoBlocked("Buy Now") : request({ kind: "buy", view })
+        }
+      >
+        <ShoppingBag size={16} /> Buy Now
+      </button>
     );
   };
 
@@ -454,26 +431,6 @@ export function NftDetail({ assetAddress }: { assetAddress: string }) {
                         {relativeTime(entry.listing.created_at) ?? "—"}
                       </span>
                     </dd>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {DEMO_MODE && DEMO_OFFERS.some((o) => o.asset === asset.asset_address) && (
-            <div style={{ display: "grid", gap: 10 }}>
-              <div className="eyebrow">Offers</div>
-              <div className="panel">
-                {DEMO_OFFERS.filter((o) => o.asset === asset.asset_address).map((offer) => (
-                  <div
-                    key={offer.id}
-                    className="detail-row"
-                    style={{ padding: "12px 16px" }}
-                  >
-                    <dt>
-                      <Address value={offer.from} head={4} tail={4} />
-                    </dt>
-                    <dd className="mono">{formatSol(offer.amountLamports)}</dd>
                   </div>
                 ))}
               </div>

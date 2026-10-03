@@ -1,27 +1,38 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCollectionDetailData } from "@/lib/collection-detail-data";
+import {
+  getCollectionDetailData,
+  getLiveCollectionDetailData,
+  type CollectionDetailData,
+} from "@/lib/collection-detail-data";
+import { DEMO_MODE } from "@/lib/demo-marketplace-data";
 import { collectionFontVars } from "@/components/collection/fonts";
 import { CollectionItemView } from "@/components/collection/CollectionItemView";
 
 export const dynamic = "force-dynamic";
 
-export function generateMetadata({
+function loadCollection(slug: string): Promise<CollectionDetailData | null> {
+  if (DEMO_MODE) return Promise.resolve(getCollectionDetailData(slug));
+  return getLiveCollectionDetailData(slug);
+}
+
+export async function generateMetadata({
   params,
 }: {
   params: { slug: string; itemId: string };
-}): Metadata {
-  const data = getCollectionDetailData(params.slug);
+}): Promise<Metadata> {
+  const data = await loadCollection(params.slug);
   if (!data) return { title: "Item" };
-  return { title: `${data.name} #${params.itemId}` };
+  const item = data.items.find((entry) => String(entry.id) === params.itemId);
+  return { title: item ? item.name : data.name };
 }
 
-export default function CollectionItemPage({
+export default async function CollectionItemPage({
   params,
 }: {
   params: { slug: string; itemId: string };
 }) {
-  const data = getCollectionDetailData(params.slug);
+  const data = await loadCollection(params.slug);
   if (!data) notFound();
 
   const item = data.items.find((entry) => String(entry.id) === params.itemId);

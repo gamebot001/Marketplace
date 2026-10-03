@@ -85,7 +85,7 @@ export function ActivityStrip({ limit = 5 }: { limit?: number }) {
               <span className="ar-sub">{view?.collectionName ?? "—"}</span>
             </span>
             <span className="action-pill" data-kind={kind === "transfer" ? undefined : kind}>
-              {activityLabel(event.type)}
+              {activityLabel(event)}
             </span>
             <span className="ar-route mono">
               {from ? shorten(from, 4, 4) : "—"}

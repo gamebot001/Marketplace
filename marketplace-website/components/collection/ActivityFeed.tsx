@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, DollarSign, Heart, List } from "lucide-react";
+import { ArrowUpRight, DollarSign, Heart, List, XCircle } from "lucide-react";
 import type { CollectionActivity, ActivityType } from "@/lib/collection-detail-data";
 import { c } from "./collection-detail.styles";
 
@@ -9,6 +9,7 @@ const ICONS: Record<ActivityType, typeof DollarSign> = {
   list: List,
   transfer: ArrowUpRight,
   offer: Heart,
+  cancel: XCircle,
 };
 
 export function ActivityFeed({

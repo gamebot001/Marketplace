@@ -3,18 +3,18 @@
   "nft_standard": "metaplex-core",
   "features": {
     "mint_enabled": false,
-    "marketplace_enabled": false,
+    "marketplace_enabled": true,
     "allowlist_enabled": false
   },
   "fees": {
-    "marketplace_fee_bps": 0,
+    "marketplace_fee_bps": 250,
     "royalty_bps_default": 0,
     "currency": "SOL",
-    "note": "Placeholders only. 0 bps means fees are disabled until final percentages are set. Do NOT treat these as final."
+    "note": "Phase 1: marketplace enabled on Devnet, 2.5% fee, creator royalty 0 for the test collection. This is the value mirrored on-chain in initialize_marketplace."
   },
   "limits": {
     "mint_limit_per_address": 1,
     "api_rate_limit_per_minute": 60
   },
-  "notes": "Defaults keep every money-touching feature OFF during the prototype phase. Fee/royalty BPS are configurable and must be set before launch."
+  "notes": "Phase 1 enables the escrow marketplace on Solana Devnet only. Minting, mainnet and royalty infrastructure remain off."
 }

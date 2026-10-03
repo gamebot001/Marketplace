@@ -177,7 +177,7 @@ export function NotificationsPopover({
         </span>
         <span className="mk-notif-rowbody">
           <span className="mk-notif-rowtop">
-            <b className="mk-notif-tag">{activityLabel(event.type)}</b>
+            <b className="mk-notif-tag">{activityLabel(event)}</b>
             <span className="mk-notif-rowtime">
               {relativeTime(event.block_time ?? event.now) ?? "—"}
             </span>

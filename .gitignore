@@ -15,10 +15,17 @@ marketplace-website/out/
 *.pem
 wallet.json
 *seed*
+*keypair.json
+
+# Anchor / Rust build output (contains the program keypair)
+target/
+.anchor/
+
+# Marketplace bootstrap scripts
+marketplace-scripts/node_modules/
+marketplace-scripts/.keys/
 
 # Runtime data stores (JSON stores used before PostgreSQL is wired)
-marketplace_backend/data/*.json
-marketplace_backend/data/*.lock
 
 # OS
 .DS_Store

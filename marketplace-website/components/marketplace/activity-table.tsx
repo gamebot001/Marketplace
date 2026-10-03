@@ -179,7 +179,7 @@ export function ActivityTable() {
                     </td>
                     <td>
                       <span className="action-pill" data-kind={actionKind(event.type)}>
-                        {activityLabel(event.type)}
+                        {activityLabel(event)}
                       </span>
                     </td>
                     <td className="mono">

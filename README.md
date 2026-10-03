@@ -27,27 +27,29 @@ separate project:
 
 ## Project status
 
-**Phase 1 — Solana + multi-collection foundation.** The active architecture
-is Solana-native. No mainnet deployment, no mint, no token, no fake data.
-Every read API returns real data or an honest empty state.
+**Phase 1 — first real Devnet trade.** The Zecians Anchor marketplace program
+is deployed to Solana Devnet and performs real escrow listings, atomic
+purchases and cancellations with Metaplex Core assets.
 
-What works today (verified by `marketplace_tests/`, 37 passing):
+What works today:
 
-- Generic Solana service layer: `SolanaChainService`, `NFTAssetService`,
-  `MarketplaceService`, `WalletService`, `TreasuryService`, `IndexerService`
-- Multi-collection registry (projects/collections + verification status)
-- Integer-lamport fee/royalty split with exact conservation
-- Idempotent treasury ledger and on-chain event indexer
-- Collection-agnostic read API (see below)
+- `programs/zecians_marketplace/` — Anchor 0.32 escrow marketplace program
+  (`initialize_marketplace`, `create_listing`, `buy_nft`, `cancel_listing`)
+  deployed to Devnet at `5E5HHbGwZbhmEcoRwBXArzoGqxX6Yh9ACPHET6EwnAwJ`
+- Frontend Solana client (`marketplace-website/lib/solana/`) wiring the existing
+  List / Buy / Cancel flows through `@anchor-lang/core` 0.32.2 + web3.js v1
+- Minimal, idempotent on-chain event processor → JsonFileStore read model
+- Direct Metaplex Core ownership reads (`core_asset_service.py`)
+- `marketplace-scripts/` bootstrap + headless Devnet E2E tooling
+- Generic Solana service layer (registry, fees, treasury, indexer)
 - Next.js marketplace website with a Solana wallet adapter
 
 Not done yet (do not assume it works):
 
-- No Solana marketplace program deployed (devnet or mainnet)
-- No mint flow implemented
-- No PostgreSQL wiring (schema exists in `marketplace-database/migrations/`;
-  services use deterministic JSON stores so the logic is testable without a
-  database)
+- No PostgreSQL wiring (JsonFileStore remains the Phase 1 persistence layer)
+- No creator royalties, offers, admin, search rewrite or mainnet (later phases)
+- Anchor `anchor test` local-validator run is blocked in this environment (see
+  the Phase 1 report); the same flows are verified end-to-end on Devnet.
 
 ## Layout
 

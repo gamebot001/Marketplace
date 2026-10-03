@@ -28,7 +28,7 @@ import {
   ChevronRight,
   Sparkles,
 } from "lucide-react";
-import { DesignHero } from "@/components/home/design-hero";
+import { DesignHero, type HeroCollection } from "@/components/home/design-hero";
 import { useNftQuickView } from "@/components/marketplace/nft-quick-view";
 
 export interface HomeStatsCell {
@@ -61,6 +61,7 @@ export interface HomeCollageItem {
 
 export interface MarketplaceHomeData {
   stats: HomeStatsCell[];
+  hero: HeroCollection[];
   featured: HomeCollectionCard[];
   trending: HomeNftCard[];
   collage: HomeCollageItem[];
@@ -393,7 +394,7 @@ export function MarketplaceHome({ data }: { data: MarketplaceHomeData }) {
 
       {/* Approved hero — identical design-preview implementation, embedded
           in the page flow beneath the shared chrome (variant="home"). */}
-      <DesignHero variant="home" />
+      <DesignHero variant="home" collections={data.hero} />
 
       {data.featured.length > 0 && (
         <section className="mk-section mk-section-featured" id="collections">

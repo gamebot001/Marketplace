@@ -1,22 +1,29 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { ArrowLeft, ArrowRight, BadgeCheck } from "lucide-react";
 import styles from "./design-hero.module.css";
 
-/*
- * Identity mapping — original local PFP files only, one project per slot.
- * The collection PFP is the main visual of each hero card.
- */
+export interface HeroCollection {
+  slug: string;
+  name: string;
+  pfp: string | null;
+  verified: boolean;
+}
 
-const COLLECTIONS = [
-  { slug: "claynosaurz", name: "Claynosaurz", pfp: "/demo-marketplace/claynosaurz/pfp.avif" },
-  { slug: "mad-lads", name: "Mad Lads", pfp: "/demo-marketplace/mad-lads/pfp.avif" },
-  { slug: "degods", name: "DeGods", pfp: "/demo-marketplace/degods/pfp.avif" },
-  { slug: "dga", name: "DGA", pfp: "/demo-marketplace/dga/pfp.avif" },
+/*
+ * The hero is a fixed four-slot carousel (the ring math is built around four
+ * cards). Live collections are passed in as a prop; this default is used by the
+ * isolated /design-preview reference route only.
+ */
+const DEFAULT_COLLECTIONS: HeroCollection[] = [
+  { slug: "claynosaurz", name: "Claynosaurz", pfp: "/demo-marketplace/claynosaurz/pfp.avif", verified: true },
+  { slug: "mad-lads", name: "Mad Lads", pfp: "/demo-marketplace/mad-lads/pfp.avif", verified: true },
+  { slug: "degods", name: "DeGods", pfp: "/demo-marketplace/degods/pfp.avif", verified: true },
+  { slug: "dga", name: "DGA", pfp: "/demo-marketplace/dga/pfp.avif", verified: true },
 ];
 
-const COUNT = COLLECTIONS.length;
+const COUNT = 4;
 const DURATION = 950;
 const SETTLE_MS = 100;
 const AUTOPLAY_MS = 6500;
@@ -96,7 +103,7 @@ const staticStyleFor = (offset: number) => {
   };
 };
 
-const INITIAL_CARD_STYLE = COLLECTIONS.map((_, i) => staticStyleFor(i));
+const INITIAL_CARD_STYLE = DEFAULT_COLLECTIONS.map((_, i) => staticStyleFor(i));
 
 /*
  * ROLE ASSIGNMENT — imperative, never via React state.
@@ -146,9 +153,16 @@ const MOTES = [
  */
 export const DesignHero = memo(function DesignHero({
   variant = "preview",
+  collections,
 }: {
   variant?: "preview" | "home";
+  collections?: HeroCollection[];
 }) {
+  const heroCollections = useMemo<HeroCollection[]>(
+    () => (collections === undefined ? DEFAULT_COLLECTIONS : collections),
+    [collections]
+  );
+
   const activeRef = useRef(0);
   const announceRef = useRef<HTMLParagraphElement>(null);
   const ring = useRef({
@@ -186,21 +200,28 @@ export const DesignHero = memo(function DesignHero({
   /* Autoplay rolls freeze the environment layers; manual interaction unfreezes. */
   const envFreeze = useRef(false);
   const tilt = useRef(
-    COLLECTIONS.map(() => ({ tx: 0, ty: 0, hz: 0, hy: 0, px: 0, py: 0 }))
+    Array.from({ length: COUNT }, () => ({
+      tx: 0,
+      ty: 0,
+      hz: 0,
+      hy: 0,
+      px: 0,
+      py: 0,
+    }))
   );
   const ambient = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
   const focusX = useRef(0);
   const prevAa = useRef<number[]>([0, 1, 2, 1]);
-  const lastBlur = useRef<string[]>(COLLECTIONS.map(() => ""));
+  const lastBlur = useRef<string[]>(new Array(COUNT).fill(""));
 
   const announce = useCallback((index: number) => {
     const el = announceRef.current;
     if (el) {
-      el.textContent = `${COLLECTIONS[index].name} — collection ${
+      el.textContent = `${heroCollections[index]?.name ?? "Collection"} — collection ${
         index + 1
       } of ${COUNT}`;
     }
-  }, []);
+  }, [heroCollections]);
 
   /* Every input uses this entry point. A running slide owns its complete
      tween and settle phase, including the card-role handoff. */
@@ -315,7 +336,7 @@ export const DesignHero = memo(function DesignHero({
     };
     measureScene();
 
-    const cardRects: (DOMRect | null)[] = COLLECTIONS.map(() => null);
+    const cardRects: (DOMRect | null)[] = new Array(COUNT).fill(null);
     let rectsDirty = true;
     const refreshRects = () => {
       for (let i = 0; i < COUNT; i += 1) {
@@ -355,7 +376,7 @@ export const DesignHero = memo(function DesignHero({
     const lastCardT: string[] = new Array(COUNT).fill("");
     const lastCardO: string[] = new Array(COUNT).fill("");
     const lastVeil: string[] = new Array(COUNT).fill("");
-    const lastTilt: string[][] = COLLECTIONS.map(() => [
+    const lastTilt: string[][] = Array.from({ length: COUNT }, () => [
       "",
       "",
       "",
@@ -880,7 +901,7 @@ export const DesignHero = memo(function DesignHero({
               <div className={styles.cardBloom} ref={bloomRef} aria-hidden="true" />
               <div className={styles.stage}>
                 <div className={styles.disc} aria-hidden="true" />
-                {COLLECTIONS.map((c, i) => {
+                {heroCollections.map((c, i) => {
                   return (
                     <article
                       key={c.slug}
@@ -899,15 +920,17 @@ export const DesignHero = memo(function DesignHero({
                         }}
                       >
                         <div className={styles.pfpWrap}>
-                          <img
-                            className={styles.cardPfp}
-                            src={c.pfp}
-                            alt={`${c.name} collection PFP`}
-                            width={480}
-                            height={480}
-                            loading="eager"
-                            draggable={false}
-                          />
+                          {c.pfp && (
+                            <img
+                              className={styles.cardPfp}
+                              src={c.pfp}
+                              alt={`${c.name} collection PFP`}
+                              width={480}
+                              height={480}
+                              loading="eager"
+                              draggable={false}
+                            />
+                          )}
                           <div
                             className={styles.veil}
                             ref={(el) => {
@@ -918,11 +941,13 @@ export const DesignHero = memo(function DesignHero({
                         <div className={styles.cardFoot}>
                           <span className={styles.cardName}>
                             {c.name}
-                            <BadgeCheck
-                              size={14}
-                              className={styles.verified}
-                              strokeWidth={2.4}
-                            />
+                            {c.verified && (
+                              <BadgeCheck
+                                size={14}
+                                className={styles.verified}
+                                strokeWidth={2.4}
+                              />
+                            )}
                           </span>
                         </div>
                       </div>

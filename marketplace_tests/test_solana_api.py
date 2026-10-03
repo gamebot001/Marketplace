@@ -12,10 +12,15 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def _build_client(tmp_path, monkeypatch, network="solana-devnet"):
+    # Isolate from any developer .env: explicit empty chain values keep these
+    # tests deterministic regardless of local Phase 1 configuration.
     settings = Settings(
         network=network,
         env="test",
         data_dir=tmp_path,
+        treasury_address="",
+        marketplace_program_id="",
+        solana_rpc_url="",
     )
     monkeypatch.setattr(app_main, "get_settings", lambda: settings)
     app_main._STORES.clear()
@@ -37,29 +42,31 @@ def test_health_is_solana_native(client):
     assert body["treasury_configured"] is False
 
 
-def test_config_shape_and_disabled_defaults(client):
+def test_config_shape_and_phase1_defaults(client):
     body = client.get("/api/config").json()
     assert body["chain"] == "solana"
     assert body["nft_standard"] == "metaplex-core"
     assert body["mint_enabled"] is False
-    assert body["marketplace_enabled"] is False
+    # Phase 1 enables the escrow marketplace on Devnet with a 2.5% fee.
+    assert body["marketplace_enabled"] is True
     assert set(body["fees"].keys()) == {
         "marketplace_fee_bps", "royalty_bps_default", "currency"
     }
+    assert body["fees"]["marketplace_fee_bps"] == 250
+    assert body["fees"]["royalty_bps_default"] == 0
 
 
-def test_collections_lists_only_real_flagship(client):
+def test_public_directory_excludes_undeployed_flagship(client):
+    """The undeployed Zecians placeholder is not part of the public directory."""
     body = client.get("/api/collections").json()
-    slugs = [c["slug"] for c in body["collections"]]
-    assert slugs == ["zecians"]
-    z = body["collections"][0]
-    assert z["flagship"] is True
-    assert z["collection_address"] is None  # no invented address
+    assert body["collections"] == []
 
 
-def test_collection_detail(client):
+def test_collection_detail_still_reachable_by_direct_id(client):
+    """Direct routes keep working for collections hidden from the directory."""
     body = client.get("/api/collections/zecians").json()
     assert body["collection"]["slug"] == "zecians"
+    assert body["collection"]["public_visible"] is False
     assert body["asset_count"] == 0
     assert client.get("/api/collections/does-not-exist").status_code == 404
 

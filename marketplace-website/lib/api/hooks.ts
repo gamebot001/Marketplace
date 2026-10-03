@@ -10,12 +10,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchActivity,
   fetchAsset,
+  fetchAssets,
   fetchCollection,
   fetchCollections,
   fetchConfig,
   fetchListings,
   fetchTreasury,
 } from "./client";
+import { MARKETPLACE_REFRESH_EVENT } from "./indexer-sync";
 import type {
   ActivityEvent,
   CollectionDetail,
@@ -71,6 +73,16 @@ export function useAsync<T>(
   }, [...deps, nonce]);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
+
+  // After a confirmed list/buy/cancel the indexer sync broadcasts a refresh;
+  // every mounted data hook refetches so the UI reflects the on-chain state.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onRefresh = () => setNonce((n) => n + 1);
+    window.addEventListener(MARKETPLACE_REFRESH_EVENT, onRefresh);
+    return () => window.removeEventListener(MARKETPLACE_REFRESH_EVENT, onRefresh);
+  }, []);
+
   return { data, error, loading, reload };
 }
 
@@ -135,14 +147,20 @@ export interface ListingData {
 export function useListingsWithAssets(params?: {
   status?: string | null;
   collectionAddress?: string | null;
+  /** When set, the owner's full indexed inventory is merged in as well. */
+  ownerAddress?: string | null;
 }): AsyncState<ListingData> {
   const status = params?.status ?? null;
   const collectionAddress = params?.collectionAddress ?? null;
+  const ownerAddress = params?.ownerAddress ?? null;
 
   return useAsync<ListingData>(async () => {
-    const [listingsResult, collectionsResult] = await Promise.all([
+    const [listingsResult, collectionsResult, ownerAssetsResult] = await Promise.all([
       fetchListings({ status, collectionAddress }),
       fetchCollections(),
+      ownerAddress
+        ? fetchAssets({ ownerAddress })
+        : Promise.resolve({ ok: true as const, data: [] as MarketplaceAsset[] }),
     ]);
     if (!listingsResult.ok) return listingsResult;
 
@@ -155,7 +173,12 @@ export function useListingsWithAssets(params?: {
     assetResults.forEach((result, index) => {
       if (result.ok) assets[uniqueAssets[index]] = result.data;
     });
+    if (ownerAssetsResult.ok) {
+      for (const asset of ownerAssetsResult.data) {
+        assets[asset.asset_address] = asset;
+      }
+    }
 
     return { ok: true, data: { listings, assets, collections } };
-  }, [status, collectionAddress]);
+  }, [status, collectionAddress, ownerAddress]);
 }

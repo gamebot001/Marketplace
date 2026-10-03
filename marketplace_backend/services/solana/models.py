@@ -12,11 +12,16 @@ STANDARD_METAPLEX_CORE = "metaplex-core"
 SUPPORTED_STANDARDS = (STANDARD_METAPLEX_CORE,)
 
 # --- Verification statuses -------------------------------------------------
+# `unverified` is the default for Phase 2A test collections: real Devnet data
+# that the platform has NOT reviewed. The UI only ever shows a verified badge
+# for VERIFICATION_VERIFIED.
+VERIFICATION_UNVERIFIED = "unverified"
 VERIFICATION_PENDING = "pending"
 VERIFICATION_VERIFIED = "verified"
 VERIFICATION_REJECTED = "rejected"
 VERIFICATION_SUSPENDED = "suspended"
 VERIFICATION_STATUSES = (
+    VERIFICATION_UNVERIFIED,
     VERIFICATION_PENDING,
     VERIFICATION_VERIFIED,
     VERIFICATION_REJECTED,

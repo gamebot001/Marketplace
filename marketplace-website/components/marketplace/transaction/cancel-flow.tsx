@@ -3,7 +3,7 @@
 import { useConfig } from "@/lib/api/hooks";
 import { PROGRAM_CONFIGURED } from "@/lib/config";
 import { formatSol } from "@/lib/format";
-import { submitCancel } from "@/lib/solana/transactions";
+import { submitCancel } from "@/lib/solana/marketplace-cancellation";
 import { VerifiedBadge } from "@/components/ui/badges";
 import type { ListingView } from "@/lib/marketplace/views";
 import { TransactionFlow } from "./flow-shell";
@@ -59,8 +59,8 @@ export function CancelFlow({
       onConfirm={(sender, connection) =>
         submitCancel(
           {
-            listingId: view.listing.listing_id,
             assetAddress: view.listing.asset_address,
+            collectionAddress: view.listing.collection_address,
           },
           sender,
           connection

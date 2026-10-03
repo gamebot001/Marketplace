@@ -2115,9 +2115,15 @@
 
 .miActions {
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
+  grid-template-columns: 1fr;
   gap: 10px;
   margin-bottom: 10px;
+}
+.miPriceNone {
+  font-size: 22px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0;
 }
 .btnBuy {
   padding: 15px 20px;
@@ -2143,6 +2149,18 @@
 }
 .btnBuy:active {
   transform: scale(0.98);
+}
+.btnBuy:disabled,
+.btnBuy[disabled] {
+  background: var(--surface-3);
+  color: var(--muted);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btnBuy:disabled:hover,
+.btnBuy[disabled]:hover {
+  background: var(--surface-3);
+  box-shadow: none;
 }
 .btnBuy svg {
   width: 15px;

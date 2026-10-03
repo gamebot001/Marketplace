@@ -18,7 +18,13 @@ import {
   DEMO_WALLETS,
   demoCollectionStats,
 } from "@/lib/demo-marketplace-data";
-import type { MarketplaceCollection } from "@/lib/api/types";
+import type {
+  ActivityEvent,
+  MarketplaceAsset,
+  MarketplaceCollection,
+  MarketplaceListing,
+} from "@/lib/api/types";
+import { lamportsToSol, relativeTime, resolveImageUrl } from "@/lib/format";
 
 export type ItemStatus = "listed" | "auction" | "unlisted";
 
@@ -26,8 +32,11 @@ export interface CollectionItem {
   id: number;
   name: string;
   image: string;
-  price: number;
-  lastSale: number;
+  /** Current listing price. Null when the asset is not actively listed — an
+      unlisted asset has no current price and must never render as 0 SOL. */
+  price: number | null;
+  /** Most recent settled sale price, when one exists. Null otherwise. */
+  lastSale: number | null;
   rank: number;
   status: ItemStatus;
   seller: string;
@@ -41,9 +50,15 @@ export interface CollectionItem {
   colour: string;
   asset: string;
   listedAt: number;
+  /** Real on-chain listing linkage (live data only). */
+  listingId?: string | null;
+  listingLamports?: number;
+  collectionAddress?: string | null;
+  standard?: string;
+  royaltyBps?: number;
 }
 
-export type ActivityType = "sale" | "list" | "offer" | "transfer";
+export type ActivityType = "sale" | "list" | "offer" | "transfer" | "cancel";
 
 export interface CollectionActivity {
   type: ActivityType;
@@ -244,6 +259,7 @@ function distribution(
 const ACTIVITY_TITLES: Record<ActivityType, string> = {
   sale: "Sold",
   list: "Listed",
+  cancel: "Cancelled",
   offer: "Offer placed",
   transfer: "Transferred",
 };
@@ -268,10 +284,11 @@ function buildActivity(items: CollectionItem[]): CollectionActivity[] {
     const item = items[(k * 37) % items.length];
     const type = ACTIVITY_ORDER[k % ACTIVITY_ORDER.length];
     const counterparty = DEMO_WALLETS[(k * 3 + 2) % DEMO_WALLETS.length];
+    const basePrice = item.price ?? 0;
     const price =
       type === "transfer"
         ? "—"
-        : (type === "offer" ? item.price * 0.85 : item.price).toFixed(1);
+        : (type === "offer" ? basePrice * 0.85 : basePrice).toFixed(1);
     out.push({
       type,
       title: ACTIVITY_TITLES[type],
@@ -319,11 +336,15 @@ function buildCollectionDetailData(slug: string): CollectionDetailData | null {
      listings, and Volume is the summed last-sale of those listings, so nothing
      on the sidebar can contradict a price shown in the grid. */
   const listedItems = items.filter((item) => item.status === "listed");
+  const listedPrices = listedItems
+    .map((item) => item.price)
+    .filter((value): value is number => value !== null);
   const floorValue =
-    listedItems.length > 0
-      ? Math.min(...listedItems.map((item) => item.price))
-      : null;
-  const volumeValue = listedItems.reduce((sum, item) => sum + item.lastSale, 0);
+    listedPrices.length > 0 ? Math.min(...listedPrices) : null;
+  const volumeValue = listedItems.reduce(
+    (sum, item) => sum + (item.lastSale ?? 0),
+    0
+  );
 
   const floor = floorValue === null ? "—" : floorValue.toFixed(1);
   const volume = volumeValue.toLocaleString("en-US", {
@@ -368,6 +389,204 @@ function buildCollectionDetailData(slug: string): CollectionDetailData | null {
         { label: "Discord", href: "#" },
         { label: "Explorer", href: "#" },
       ],
+    },
+  };
+}
+
+/* ============================================================================
+   LIVE collection detail — built from the real backend read model.
+
+   The same CollectionDetailData shape is produced from real assets, listings
+   and indexed activity; attributes are honoured when present and an empty
+   attributes array simply yields no trait facets (the filters degrade
+   gracefully rather than crashing). No demo data is used on this path.
+   ========================================================================== */
+
+function apiBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8788").replace(
+    /\/$/,
+    ""
+  );
+}
+
+function liveTime(seconds: number | null | undefined): string {
+  return relativeTime(seconds ?? 0) ?? "—";
+}
+
+function activityType(type: string): ActivityType {
+  if (type === "sale") return "sale";
+  if (type === "cancel" || type === "cancelled") return "cancel";
+  if (type === "offer") return "offer";
+  if (type === "transfer") return "transfer";
+  return "list";
+}
+
+const ACTIVITY_TITLE: Record<ActivityType, string> = {
+  sale: "Sold",
+  list: "Listed",
+  cancel: "Cancelled",
+  offer: "Offer placed",
+  transfer: "Transferred",
+};
+
+export async function getLiveCollectionDetailData(
+  slug: string
+): Promise<CollectionDetailData | null> {
+  const base = apiBaseUrl();
+  let response: Response;
+  try {
+    response = await fetch(
+      `${base}/api/collections/${encodeURIComponent(slug)}`,
+      { cache: "no-store", headers: { accept: "application/json" } }
+    );
+  } catch {
+    throw new Error(
+      "Could not reach the marketplace API. No collection data was loaded."
+    );
+  }
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(
+      `The marketplace API responded with HTTP ${response.status}.`
+    );
+  }
+
+  const payload = (await response.json()) as {
+    collection: MarketplaceCollection;
+    asset_count?: number;
+    assets?: MarketplaceAsset[];
+    listings?: MarketplaceListing[];
+  };
+  const collection = payload.collection;
+  const assets = payload.assets ?? [];
+  const listings = payload.listings ?? [];
+
+  let events: ActivityEvent[] = [];
+  try {
+    const activityResponse = await fetch(`${base}/api/activity?limit=200`, {
+      cache: "no-store",
+      headers: { accept: "application/json" },
+    });
+    if (activityResponse.ok) {
+      const body = (await activityResponse.json()) as { events?: ActivityEvent[] };
+      events = body.events ?? [];
+    }
+  } catch {
+    // Activity is supplementary; the grid still renders from assets/listings.
+  }
+
+  const collectionAddress = collection.collection_address;
+  const collectionEvents = events.filter(
+    (event) => event.collection_address === collectionAddress
+  );
+
+  const items: CollectionItem[] = assets.map((asset, index) => {
+    const active = listings.find(
+      (l) => l.asset_address === asset.asset_address && l.status === "active"
+    );
+    const sold = listings.find(
+      (l) => l.asset_address === asset.asset_address && l.status === "sold"
+    );
+    const creator =
+      collection.creator_address || asset.creator_address || asset.owner_address || "";
+    return {
+      id: index + 1,
+      name: asset.name?.trim() || `${collection.name} #${index + 1}`,
+      image: resolveImageUrl(asset.image ?? asset.metadata_uri) ?? "",
+      price: active ? Number(lamportsToSol(active.price_lamports)) : null,
+      lastSale: sold ? Number(lamportsToSol(sold.price_lamports)) : null,
+      rank: 0,
+      status: active ? "listed" : "unlisted",
+      seller: active?.seller_address ?? asset.owner_address ?? "",
+      owner: asset.owner_address ?? "",
+      creator,
+      royalty: asset.royalty_bps ? `${asset.royalty_bps / 100}%` : "0%",
+      chain: "Solana",
+      // Phase 2A assets ship no visual traits; empty strings keep every
+      // consumer honest (no trait filter is available to select).
+      species: "",
+      scene: "",
+      expression: "",
+      colour: "",
+      asset: asset.asset_address,
+      listedAt: active?.created_at ?? asset.created_at ?? 0,
+      listingId: active?.listing_id ?? null,
+      listingLamports: active?.price_lamports ?? 0,
+      collectionAddress: asset.collection_address ?? collectionAddress ?? null,
+      standard: asset.standard ?? collection.standard,
+      royaltyBps: asset.royalty_bps ?? 0,
+    };
+  });
+
+  const activeListings = listings.filter((l) => l.status === "active");
+  const stats = collection.stats;
+  const floorValue =
+    stats?.floor_lamports ??
+    (activeListings.length
+      ? Math.min(...activeListings.map((l) => l.price_lamports))
+      : null);
+  const volumeValue = stats?.volume_lamports ?? 0;
+  const supplyValue = stats?.supply ?? assets.length;
+  const listedValue = stats?.listed_count ?? activeListings.length;
+
+  const activity: CollectionActivity[] = collectionEvents.slice(0, 24).map((event) => {
+    const type = activityType(event.type);
+    const counterparty =
+      event.buyer_address ??
+      event.to_address ??
+      event.from_address ??
+      event.seller_address ??
+      "";
+    return {
+      type,
+      // The backend owns the final event label; only fall back to the local
+      // table if an older API response omits it.
+      title: event.label ?? ACTIVITY_TITLE[type],
+      to: counterparty ? short(counterparty) : "—",
+      price: event.lamports != null ? lamportsToSol(event.lamports) : "—",
+      time: liveTime(event.block_time ?? event.now),
+      txHash: event.signature,
+    };
+  });
+
+  const description =
+    collection.description?.trim() ||
+    `${collection.name} is a collection on the Zecians Marketplace.`;
+
+  const website =
+    collection.website?.trim() || collection.socials?.website?.trim() || null;
+
+  return {
+    slug,
+    name: collection.name,
+    verified: collection.verification_status === "verified",
+    pfp: resolveImageUrl(collection.image) ?? "",
+    description,
+    creator:
+      collection.creator_address ||
+      assets.find((a) => a.creator_address)?.creator_address ||
+      assets.find((a) => a.owner_address)?.owner_address ||
+      "",
+    floor: floorValue === null ? "—" : lamportsToSol(floorValue),
+    volume: lamportsToSol(volumeValue),
+    totalItems: supplyValue.toLocaleString("en-US"),
+    listedCount: String(listedValue),
+    royalty: collection.royalty_bps ? `${collection.royalty_bps / 100}%` : "0%",
+    chain: "Solana",
+    launched: "",
+    solUsd: SOL_USD,
+    items,
+    activity,
+    traitGroups: [],
+    colourOptions: [],
+    traitDistribution: [],
+    about: {
+      heading: `About ${collection.name}`,
+      paragraphs: [
+        description,
+        "This is a custom Solana Devnet test collection created for the Zecians Marketplace. It is not affiliated with any existing mainnet collection.",
+      ],
+      links: website ? [{ label: "Website", href: website }] : [],
     },
   };
 }

@@ -14,14 +14,17 @@
  * [itemId], reusing this exact markup and styles.
  */
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Heart, Plus, Star, Wallet, X } from "lucide-react";
+import { Heart, Star, Wallet, X } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import type { CollectionDetailData, CollectionItem } from "@/lib/collection-detail-data";
+import type { MarketplaceAsset } from "@/lib/api/types";
+import type { ListingView } from "@/lib/marketplace/views";
+import { DEMO_MODE } from "@/lib/demo-marketplace-data";
 import { shorten } from "@/lib/format";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
 import { useWalletDialog } from "@/components/wallet/wallet-provider";
+import { useTransaction } from "@/components/marketplace/transaction/transaction-provider";
 import { c } from "./collection-detail.styles";
 import { useCollectionWatchlist } from "./useCollectionWatchlist";
 import { Verify } from "./icons";
@@ -59,17 +62,11 @@ export function NftModal({
 }) {
   const open = Boolean(item) || mode === "page";
   const active = item ?? data.items[0];
-  const [offerOpen, setOfferOpen] = useState(false);
-  const [offerAmount, setOfferAmount] = useState("");
 
-  const { connected } = useWallet();
+  const { connected, publicKey } = useWallet();
   const { open: openWallet } = useWalletDialog();
+  const { request } = useTransaction();
   const watchlist = useCollectionWatchlist();
-
-  useEffect(() => {
-    setOfferOpen(false);
-    setOfferAmount("");
-  }, [active?.id]);
 
   if (!active) return null;
 
@@ -83,30 +80,126 @@ export function NftModal({
     { label: "Colour", value: active.colour },
   ].filter((trait) => trait.value);
 
-  const usd = (active.price * data.solUsd).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const isListed = Boolean(active.listingId);
+  const hasPrice = active.price !== null;
+  const usd =
+    active.price !== null
+      ? (active.price * data.solUsd).toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : null;
 
   const watching = watchlist.has(active.asset);
 
+  const walletAddress = publicKey?.toBase58() ?? null;
+  // Ownership is resolved from the current beneficial owner, never inferred
+  // from stale UI state. A seller is only meaningful for an active listing.
+  const isOwner = Boolean(
+    walletAddress && active.owner && walletAddress === active.owner
+  );
+  const isSeller = Boolean(
+    isListed && walletAddress && active.seller && walletAddress === active.seller
+  );
+
+  // Role + price semantics: an active listing has a Seller and a real price;
+  // an unlisted asset has an Owner and no current price.
+  const roleLabel = isListed
+    ? isSeller
+      ? "Listed by"
+      : "Seller"
+    : "Owner";
+  const roleAddress = isListed ? active.seller : active.owner;
+  const roleIsSelf = Boolean(walletAddress && roleAddress && walletAddress === roleAddress);
+  // Creator is only shown when it is a distinct relationship from the current
+  // beneficial owner; the same address is never listed twice (or three times).
+  const showCreator = Boolean(active.creator && active.creator !== roleAddress);
+
+  function buildListingView(): ListingView {
+    return {
+      listing: {
+        listing_id: active.listingId ?? "",
+        asset_address: active.asset,
+        collection_address: active.collectionAddress ?? null,
+        seller_address: active.seller,
+        price_lamports: active.listingLamports ?? 0,
+        currency: "SOL",
+        marketplace: "zecians",
+        status: "active",
+        created_at: active.listedAt,
+        sale_id: null,
+      },
+      name: active.name,
+      image: active.image || null,
+      collectionName: data.name,
+      collectionSlug: data.slug,
+      collectionVerified: data.verified,
+      standard: active.standard ?? "metaplex-core",
+      ownerAddress: active.owner || null,
+      creatorAddress: active.creator || null,
+      royaltyBps: active.royaltyBps ?? null,
+      description: null,
+    };
+  }
+
+  function buildAsset(): MarketplaceAsset {
+    return {
+      asset_address: active.asset,
+      collection_address: active.collectionAddress ?? null,
+      owner_address: active.owner || null,
+      standard: active.standard ?? "metaplex-core",
+      metadata_uri: null,
+      creator_address: active.creator || null,
+      royalty_bps: active.royaltyBps ?? 0,
+      verified_collection: data.verified,
+      name: active.name,
+      description: null,
+      image: active.image || null,
+      attributes: null,
+    };
+  }
+
   const handleBuy = () => {
+    if (DEMO_MODE) {
+      if (!connected) {
+        openWallet();
+        return;
+      }
+      onToast("Purchase flow not wired in design preview");
+      return;
+    }
+    if (!isListed) {
+      onToast("This item is not currently listed.");
+      return;
+    }
+    if (isSeller) {
+      onToast("You already own this listing.");
+      return;
+    }
     if (!connected) {
       openWallet();
       return;
     }
-    onToast("Purchase flow not wired yet");
+    request({ kind: "buy", view: buildListingView() });
+    onClose();
   };
 
-  const submitOffer = () => {
-    const amount = Number(offerAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      onToast("Enter a valid offer amount");
+  const handleList = () => {
+    if (!connected) {
+      openWallet();
       return;
     }
-    setOfferOpen(false);
-    setOfferAmount("");
-    onToast("Offer placed (demo)");
+    request({ kind: "list", asset: buildAsset(), collectionName: data.name });
+    onClose();
+  };
+
+  const handleCancel = () => {
+    if (!connected) {
+      openWallet();
+      return;
+    }
+    request({ kind: "cancel", view: buildListingView() });
+    onClose();
   };
 
   const panel = (
@@ -160,15 +253,25 @@ export function NftModal({
           <div className={c("miPriceMain")}>
             <div className={c("miPriceK")}>Current price</div>
             <div className={c("miPriceNum")}>
-              <span>{active.price.toFixed(1)}</span>
-              <small>SOL</small>
+              {hasPrice && active.price !== null ? (
+                <>
+                  <span>{active.price.toFixed(1)}</span>
+                  <small>SOL</small>
+                </>
+              ) : (
+                <span className={c("miPriceNone")}>Not listed</span>
+              )}
             </div>
-            <div className={c("miPriceUsd")}>≈ ${usd} USD</div>
+            {usd !== null && <div className={c("miPriceUsd")}>≈ ${usd} USD</div>}
           </div>
           <div className={c("miPriceSide")}>
             <div className={c("miLast")}>
               <div className={c("k")}>Last sale</div>
-              <div className={c("v")}>{active.lastSale.toFixed(1)} SOL</div>
+              <div className={c("v")}>
+                {active.lastSale === null
+                  ? "—"
+                  : `${active.lastSale.toFixed(1)} SOL`}
+              </div>
             </div>
             <span className={c("miStatus")}>{label}</span>
           </div>
@@ -176,68 +279,50 @@ export function NftModal({
 
         <div className={c("miSeller")}>
           <div className={c("miAvatar")}>
-            {active.seller.slice(0, 1).toUpperCase()}
+            {roleIsSelf
+              ? "Y"
+              : (roleAddress ?? "—").slice(0, 1).toUpperCase()}
           </div>
           <div className={c("miSellerMeta")}>
-            <div className={c("k")}>Seller</div>
-            <div className={c("v")}>{shorten(active.seller, 5, 5)}</div>
+            <div className={c("k")}>{roleLabel}</div>
+            <div className={c("v")}>
+              {roleIsSelf
+                ? "You"
+                : roleAddress
+                  ? shorten(roleAddress, 5, 5)
+                  : "—"}
+            </div>
           </div>
         </div>
 
         <div className={c("miActions")}>
-          <button type="button" className={c("btnBuy")} onClick={handleBuy}>
-            <Wallet aria-hidden />
-            {connected ? "Buy now" : "Connect to buy"}
-          </button>
-          <button
-            type="button"
-            className={c("btnOutline")}
-            aria-expanded={offerOpen}
-            onClick={() => setOfferOpen((value) => !value)}
-          >
-            <Plus aria-hidden />
-            Make Offer
-          </button>
+          {!connected ? (
+            <button type="button" className={c("btnBuy")} onClick={openWallet}>
+              <Wallet aria-hidden />
+              Connect Wallet
+            </button>
+          ) : isListed && isSeller ? (
+            <button type="button" className={c("btnBuy")} onClick={handleCancel}>
+              <Wallet aria-hidden />
+              Cancel listing
+            </button>
+          ) : isListed ? (
+            <button type="button" className={c("btnBuy")} onClick={handleBuy}>
+              <Wallet aria-hidden />
+              Buy now
+            </button>
+          ) : isOwner ? (
+            <button type="button" className={c("btnBuy")} onClick={handleList}>
+              <Wallet aria-hidden />
+              List for sale
+            </button>
+          ) : (
+            <button type="button" className={c("btnBuy")} disabled>
+              <Wallet aria-hidden />
+              Not for sale
+            </button>
+          )}
         </div>
-
-        {offerOpen ? (
-          <div className={c("offerBox")}>
-            <div className={c("offerHead")}>Make an offer</div>
-            <div className={c("offerField")}>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="0.0"
-                value={offerAmount}
-                autoFocus
-                onChange={(event) => setOfferAmount(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") submitOffer();
-                }}
-              />
-              <span className={c("offerUnit")}>SOL</span>
-            </div>
-            <div className={c("offerActions")}>
-              <button
-                type="button"
-                className={c("offerCancel")}
-                onClick={() => {
-                  setOfferOpen(false);
-                  setOfferAmount("");
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className={c("offerSubmit")}
-                onClick={submitOffer}
-              >
-                Submit offer
-              </button>
-            </div>
-          </div>
-        ) : null}
 
         <button
           type="button"
@@ -258,10 +343,12 @@ export function NftModal({
             <div className={c("k")}>Royalty</div>
             <div className={c("v")}>{active.royalty}</div>
           </div>
-          <div className={c("miInfoItem")}>
-            <div className={c("k")}>Creator</div>
-            <div className={c("v")}>{shorten(active.creator, 5, 5)}</div>
-          </div>
+          {showCreator ? (
+            <div className={c("miInfoItem")}>
+              <div className={c("k")}>Creator</div>
+              <div className={c("v")}>{shorten(active.creator, 5, 5)}</div>
+            </div>
+          ) : null}
           <div className={c("miInfoItem")}>
             <div className={c("k")}>Token</div>
             <div className={c("v")}>#{active.id}</div>

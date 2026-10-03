@@ -1,0 +1,29 @@
+{
+  "name": "zecians-marketplace-scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase 1 Devnet bootstrap + headless E2E tooling for the Zecians marketplace. Development tooling only — not part of the marketplace UI and not a public mint.",
+  "scripts": {
+    "mint": "tsx mint-test-assets.ts",
+    "init-marketplace": "tsx initialize-marketplace.ts",
+    "e2e": "tsx devnet-marketplace-e2e.ts",
+    "phase2a:check": "tsx phase2a-artwork.ts --check",
+    "phase2a:artwork": "tsx phase2a-artwork.ts",
+    "phase2a:mint": "tsx phase2a-mint.ts",
+    "phase2a:market": "tsx phase2a-marketplace.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anchor-lang/core": "0.32.2",
+    "@metaplex-foundation/mpl-core": "1.10.0",
+    "@metaplex-foundation/umi": "1.6.0",
+    "@metaplex-foundation/umi-bundle-defaults": "1.6.0",
+    "@solana/web3.js": "1.99.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.9",
+    "tsx": "4.23.15",
+    "typescript": "5.5.4"
+  }
+}

@@ -187,6 +187,34 @@ export async function fetchListing(
   return getJson(`/api/marketplace/listings/${encodeURIComponent(listingId)}`);
 }
 
+export async function fetchAssets(params?: {
+  ownerAddress?: string | null;
+  collectionAddress?: string | null;
+}): Promise<FetchResult<MarketplaceAsset[]>> {
+  if (DEMO_MODE) {
+    let assets = DEMO_ASSETS;
+    if (params?.ownerAddress) {
+      assets = assets.filter((a) => a.owner_address === params.ownerAddress);
+    }
+    if (params?.collectionAddress) {
+      assets = assets.filter(
+        (a) => a.collection_address === params.collectionAddress
+      );
+    }
+    return resolved<MarketplaceAsset[]>(assets);
+  }
+  const search = new URLSearchParams();
+  if (params?.ownerAddress) search.set("owner_address", params.ownerAddress);
+  if (params?.collectionAddress) {
+    search.set("collection_address", params.collectionAddress);
+  }
+  const result = await getJson<{ assets?: MarketplaceAsset[] }>(
+    `/api/assets?${search.toString()}`
+  );
+  if (!result.ok) return result;
+  return { ok: true, data: result.data.assets ?? [] };
+}
+
 export async function fetchActivity(limit = 100): Promise<FetchResult<ActivityEvent[]>> {
   if (DEMO_MODE) return resolved<ActivityEvent[]>(DEMO_ACTIVITY.slice(0, limit));
   const result = await getJson<{ events?: ActivityEvent[] }>(

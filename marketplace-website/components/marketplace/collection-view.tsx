@@ -214,15 +214,19 @@ export function CollectionView({ slug }: { slug: string }) {
 
   const verified = collection.verification_status === "verified";
   const stats = DEMO_MODE ? demoCollectionStats(collection.slug) : null;
+  const apiStats = DEMO_MODE ? undefined : collection.stats;
 
   const floorValue = stats
     ? stats.floorLamports
-    : activeViews.length
-      ? Math.min(...activeViews.map((v) => v.listing.price_lamports))
-      : null;
-  const volumeValue = stats ? stats.volumeLamports : null;
-  const supplyValue = stats?.supply ?? collection.supply ?? null;
-  const listedValue = stats?.listedCount ?? activeViews.length;
+    : (apiStats?.floor_lamports ??
+      (activeViews.length
+        ? Math.min(...activeViews.map((v) => v.listing.price_lamports))
+        : null));
+  const volumeValue = stats ? stats.volumeLamports : (apiStats?.volume_lamports ?? null);
+  const supplyValue =
+    stats?.supply ?? apiStats?.supply ?? collection.supply ?? null;
+  const listedValue =
+    stats?.listedCount ?? apiStats?.listed_count ?? activeViews.length;
   const creator =
     allViews.find((v) => v.creatorAddress)?.creatorAddress ?? null;
   const royalty = bpsToPercent(collection.royalty_bps ?? null);

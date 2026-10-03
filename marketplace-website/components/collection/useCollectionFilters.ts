@@ -27,8 +27,13 @@ export interface CollectionFilters {
   expression: string[];
 }
 
+/**
+ * The collection page opens unfiltered: every NFT (listed + unlisted) is shown.
+ * "Listed first" is a SORT concern (see the default "recent" sort), never a
+ * filter — a user must never arrive with a Listed chip they did not select.
+ */
 export const DEFAULT_FILTERS: CollectionFilters = {
-  status: "listed",
+  status: "all",
   priceMin: "",
   priceMax: "",
   species: [],
@@ -134,8 +139,12 @@ export function useCollectionFilters(
 
     return items.filter((item) => {
       if (filters.status !== "all" && item.status !== filters.status) return false;
-      if (min !== null && Number.isFinite(min) && item.price < min) return false;
-      if (max !== null && Number.isFinite(max) && item.price > max) return false;
+      if (min !== null && Number.isFinite(min)) {
+        if (item.price === null || item.price < min) return false;
+      }
+      if (max !== null && Number.isFinite(max)) {
+        if (item.price === null || item.price > max) return false;
+      }
       if (hasSpecies && !filters.species.includes(item.species)) return false;
       if (hasScene && !filters.scene.includes(item.scene)) return false;
       if (hasExpression && !filters.expression.includes(item.expression)) return false;
@@ -145,19 +154,34 @@ export function useCollectionFilters(
 
   const sorted = useMemo(() => {
     const next = filtered.slice();
+    const byPrice = (a: CollectionItem, b: CollectionItem, dir: 1 | -1) => {
+      if (a.price === null && b.price === null) return 0;
+      if (a.price === null) return 1;
+      if (b.price === null) return -1;
+      return dir * (a.price - b.price);
+    };
+
     switch (sort) {
       case "price-asc":
-        next.sort((a, b) => a.price - b.price);
+        next.sort((a, b) => byPrice(a, b, 1));
         break;
       case "price-desc":
-        next.sort((a, b) => b.price - a.price);
+        next.sort((a, b) => byPrice(a, b, -1));
         break;
       case "rarity":
         next.sort((a, b) => a.rank - b.rank);
         break;
       case "recent":
       default:
-        next.sort((a, b) => b.listedAt - a.listedAt);
+        // Default browse order: listed assets first, then unlisted, each group
+        // most-recent-first. This keeps every NFT visible while the market
+        // stays at the top — distinct from the status filter.
+        next.sort((a, b) => {
+          const aListed = a.status === "unlisted" ? 1 : 0;
+          const bListed = b.status === "unlisted" ? 1 : 0;
+          if (aListed !== bListed) return aListed - bListed;
+          return b.listedAt - a.listedAt;
+        });
         break;
     }
     return next;

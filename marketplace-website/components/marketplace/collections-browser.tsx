@@ -3,12 +3,11 @@
 /**
  * Collections — the collection directory.
  *
- * A premium marketplace index with two ways to scan the same real data: a
- * row-based table (default) and a compact two-column directory. Both carry the
- * same identity cluster (PFP + name + verification), favourite control,
- * navigation, metrics and sort order. A unified search / verified / sort
- * control sits above, and the table headers themselves sort by floor, volume
- * and sales. Honest empty & error states throughout.
+ * A premium marketplace index with one row-based table carrying the identity
+ * cluster (PFP + name + verification), favourite control, navigation, metrics
+ * and sort order. A unified search / verified / sort control sits above, and
+ * the table headers themselves sort by floor, volume and sales. Honest empty &
+ * error states throughout.
  *
  * Every metric supports a secondary 24h change, drawn only from real data: a
  * metric without a reported change shows "—" until the backend populates it.
@@ -40,8 +39,6 @@ import {
   ChevronsUpDown,
   ChevronUp,
   Layers,
-  LayoutGrid,
-  Rows3,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
@@ -71,7 +68,6 @@ type SortKey =
 
 type MetricPrefix = "floor" | "volume" | "sales";
 type SortState = "none" | "asc" | "desc";
-type ViewMode = "list" | "compact";
 
 interface MetricChanges {
   floor: number | null;
@@ -85,6 +81,31 @@ interface CollectionView {
   stats: DemoCollectionStats | null;
   live: number;
   changes: MetricChanges;
+}
+
+/**
+ * Map the backend's real collection roll-up onto the presentation stats shape.
+ * Null floor renders as "—"; no percentage change is invented (all deltas are
+ * null until the backend actually tracks them).
+ */
+function apiCollectionStats(
+  collection: MarketplaceCollection
+): DemoCollectionStats | null {
+  const stats = collection.stats;
+  if (!stats) return null;
+  return {
+    // A null floor means "no active listing", which must render "—", not 0 SOL.
+    floorLamports: stats.floor_lamports ?? null,
+    volumeLamports: stats.volume_lamports ?? 0,
+    change24hPercent: 0,
+    supply: stats.supply,
+    listedCount: stats.listed_count,
+    sales24h: stats.sales,
+    floorChange24hPercent: stats.floor_change_24h,
+    volumeChange24hPercent: stats.volume_change_24h,
+    salesChange24hPercent: stats.sales_change_24h,
+    listedChange24hPercent: stats.listed_change_24h,
+  };
 }
 
 /**
@@ -208,7 +229,7 @@ function CollectionRow({
   const pfp = resolveImageUrl(collection.image);
   const number = String(index + 1).padStart(2, "0");
   const address = collection.collection_address;
-  const owners = collection.owners ?? null;
+  const owners = collection.owners ?? collection.stats?.owners ?? null;
 
   return (
     <div
@@ -301,7 +322,9 @@ function CollectionRow({
         <span className="coll-row-stat" data-rank="5">
           <span className="coll-row-k">Owners</span>
           <span className="coll-row-v">
-            {owners != null ? owners.toLocaleString("en-US") : "—"}
+            {owners != null && owners > 0
+              ? owners.toLocaleString("en-US")
+              : "—"}
           </span>
         </span>
       </span>
@@ -310,128 +333,6 @@ function CollectionRow({
         <ChevronRight size={17} />
       </span>
     </div>
-  );
-}
-
-/**
- * Compact directory card — the same identity cluster and metrics as a row,
- * reflowed into a horizontal identity block. One card, one click target.
- */
-function CollectionCard({
-  view,
-  index,
-}: {
-  view: CollectionView;
-  index: number;
-}) {
-  const { collection, stats, live, changes } = view;
-  const verified = collection.verification_status === "verified";
-  const pfp = resolveImageUrl(collection.image);
-  const address = collection.collection_address;
-  const owners = collection.owners ?? null;
-
-  return (
-    <article
-      className="coll-card"
-      style={{ "--i": String(Math.min(index, 12)) } as CSSProperties}
-    >
-      <Link
-        href={`/collections/${collection.slug}`}
-        className="coll-card-hit"
-        aria-label={`View ${collection.name}`}
-      />
-
-      <div className="coll-card-body">
-        <div className="coll-card-top">
-          <span className="coll-card-pfp">
-            <Artwork src={pfp} alt="" sizes="50px" />
-          </span>
-
-          <span className="coll-card-ident">
-            <span className="coll-card-name">
-              <span className="nm">{collection.name}</span>
-              {verified && (
-                <BadgeCheck size={14} aria-label="Verified" className="coll-card-check" />
-              )}
-            </span>
-          </span>
-
-          <span className="coll-card-fav-slot">
-            {address ? (
-              <WatchToggle
-                assetAddress={address}
-                label={collection.name}
-                className="coll-card-fav"
-                size={15}
-              />
-            ) : (
-              <span className="coll-card-fav-empty" aria-hidden />
-            )}
-          </span>
-
-          <span className="coll-card-arrow" aria-hidden>
-            <ChevronRight size={16} />
-          </span>
-        </div>
-
-        <div className="coll-card-metrics">
-          <span className="coll-card-metric" data-rank="1">
-            <span className="coll-card-k">Floor</span>
-            <span className="coll-card-v">
-              {stats ? formatSol(stats.floorLamports) : "—"}
-            </span>
-            {stats && (
-              <MetricChange
-                value={changes.floor}
-                title="Floor change in the last 24 hours"
-              />
-            )}
-          </span>
-          <span className="coll-card-metric" data-rank="2">
-            <span className="coll-card-k">24H Volume</span>
-            <span className="coll-card-v">
-              {stats ? formatSol(stats.volumeLamports) : "—"}
-            </span>
-            {stats && (
-              <MetricChange
-                value={changes.volume}
-                title="Volume change in the last 24 hours"
-              />
-            )}
-          </span>
-          <span className="coll-card-metric" data-rank="3">
-            <span className="coll-card-k">24H Sales</span>
-            <span className="coll-card-v">
-              {stats ? stats.sales24h.toLocaleString("en-US") : "—"}
-            </span>
-            {stats && (
-              <MetricChange
-                value={changes.sales}
-                title="Sales change in the last 24 hours"
-              />
-            )}
-          </span>
-          <span className="coll-card-metric" data-rank="4">
-            <span className="coll-card-k">Listed</span>
-            <span className="coll-card-v">
-              {live > 0 ? live.toLocaleString("en-US") : "—"}
-            </span>
-            {live > 0 && (
-              <MetricChange
-                value={changes.listed}
-                title="Listings change in the last 24 hours"
-              />
-            )}
-          </span>
-          <span className="coll-card-metric" data-rank="5">
-            <span className="coll-card-k">Owners</span>
-            <span className="coll-card-v">
-              {owners != null ? owners.toLocaleString("en-US") : "—"}
-            </span>
-          </span>
-        </div>
-      </div>
-    </article>
   );
 }
 
@@ -521,7 +422,6 @@ function CollectionsShowcase({ views }: { views: CollectionView[] }) {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const glowRef = useRef<HTMLDivElement | null>(null);
   const countRef = useRef<HTMLElement | null>(null);
-  const toastRef = useRef<HTMLDivElement | null>(null);
   const nextRef = useRef<HTMLButtonElement | null>(null);
   const prevRef = useRef<HTMLButtonElement | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -538,7 +438,6 @@ function CollectionsShowcase({ views }: { views: CollectionView[] }) {
     const lastDim: number[] = [];
     const countEl = countRef.current;
     const glowEl = glowRef.current;
-    const toastEl = toastRef.current;
 
     const ring = { current: 0 };
     const state: {
@@ -561,7 +460,6 @@ function CollectionsShowcase({ views }: { views: CollectionView[] }) {
     const drag = { startX: 0, startActive: 0, lastX: 0, lastT: 0, velocity: 0 };
     const wheel = { base: null as number | null, acc: 0, timer: 0 };
     let dwellTimer = 0;
-    let toastTimer = 0;
 
     const updateCount = () => {
       if (!countEl) return;
@@ -660,17 +558,6 @@ function CollectionsShowcase({ views }: { views: CollectionView[] }) {
       resetDwell();
     };
 
-    const showToast = (slug: string) => {
-      if (!toastEl) return;
-      toastEl.textContent = `→ /collections/${slug}`;
-      toastEl.classList.add("show");
-      clearTimeout(toastTimer);
-      toastTimer = window.setTimeout(
-        () => toastEl.classList.remove("show"),
-        1900
-      );
-    };
-
     /* CARD CLICK — pointer capture retargets the click to the stage, so the hit
        is resolved from the point via elementFromPoint; any card, including the
        back-card slivers, resolves to its own .coll-deck-card. */
@@ -686,7 +573,6 @@ function CollectionsShowcase({ views }: { views: CollectionView[] }) {
       const view = featured[idx];
       const slug = cardEl.dataset.slug ?? view?.collection.slug;
       if (!slug) return;
-      showToast(slug);
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) {
         window.open(`/collections/${slug}`, "_blank");
       } else {
@@ -871,7 +757,6 @@ function CollectionsShowcase({ views }: { views: CollectionView[] }) {
       cancelAnimationFrame(state.raf);
       clearTimeout(dwellTimer);
       clearTimeout(wheel.timer);
-      clearTimeout(toastTimer);
       state.running = false;
       stageEl.removeEventListener("pointerdown", onDown);
       stageEl.removeEventListener("pointermove", onMove);
@@ -900,8 +785,11 @@ function CollectionsShowcase({ views }: { views: CollectionView[] }) {
         onDragStart={(e) => e.preventDefault()}
       >
         <div className="coll-deck-chrome">
-          <span className="coll-deck-count">
-            <b ref={countRef}>01</b> / <span>{count}</span> · Featured
+          <span className="coll-deck-label">
+            <span className="coll-deck-eyebrow">Featured</span>
+            <span className="coll-deck-count">
+              <b ref={countRef}>01</b> / <span>{count}</span>
+            </span>
           </span>
           {count > 1 && (
             <div className="coll-deck-arrows">
@@ -986,8 +874,6 @@ function CollectionsShowcase({ views }: { views: CollectionView[] }) {
             );
           })}
         </div>
-
-        <div className="coll-deck-toast" ref={toastRef} aria-live="polite" />
       </div>
     </section>
   );
@@ -1025,7 +911,6 @@ export function CollectionsBrowser() {
   const [query, setQuery] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>("name-asc");
-  const [mode, setMode] = useState<ViewMode>("list");
 
   const liveByAddress = useMemo(() => {
     const map = new Map<string, number>();
@@ -1039,7 +924,9 @@ export function CollectionsBrowser() {
   const views = useMemo<CollectionView[]>(
     () =>
       collections.map((collection) => {
-        const stats = DEMO_MODE ? demoCollectionStats(collection.slug) : null;
+        const stats = DEMO_MODE
+          ? demoCollectionStats(collection.slug)
+          : apiCollectionStats(collection);
         return {
           collection,
           stats,
@@ -1106,12 +993,10 @@ export function CollectionsBrowser() {
         return false;
       }
       if (!normalizedQuery) return true;
-      const haystack = [
-        collection.name,
-        collection.slug,
-        collection.description ?? "",
-        collection.standard,
-      ]
+      // Collection search matches the visible NAME and SLUG only. Description,
+      // standard, addresses and other hidden fields must never enter the
+      // haystack — searching "d" must not surface unrelated collections.
+      const haystack = [collection.name, collection.slug]
         .join(" ")
         .toLowerCase();
       return haystack.includes(normalizedQuery);
@@ -1151,27 +1036,6 @@ export function CollectionsBrowser() {
       <CollectionsShowcase views={views} />
 
       <div className="control-row coll-controls" role="search">
-        <div className="coll-viewswitch" role="group" aria-label="View mode">
-          <button
-            type="button"
-            aria-pressed={mode === "list"}
-            aria-label="List view"
-            title="List view"
-            onClick={() => setMode("list")}
-          >
-            <Rows3 size={15} aria-hidden />
-          </button>
-          <button
-            type="button"
-            aria-pressed={mode === "compact"}
-            aria-label="Compact view"
-            title="Compact view"
-            onClick={() => setMode("compact")}
-          >
-            <LayoutGrid size={15} aria-hidden />
-          </button>
-        </div>
-
         <label className="mkt-search">
           <Search size={15} aria-hidden />
           <input
@@ -1222,9 +1086,8 @@ export function CollectionsBrowser() {
       )}
 
       {filtered.length > 0 ? (
-        mode === "list" ? (
-          <div className="coll-list">
-            <div className="coll-list-head">
+        <div className="coll-list">
+          <div className="coll-list-head">
               <span className="coll-list-head-name">Collection</span>
               <span className="coll-list-head-stats">
                 {hasStats ? (
@@ -1262,17 +1125,10 @@ export function CollectionsBrowser() {
                 <span>Owners</span>
               </span>
             </div>
-            {filtered.map((view, i) => (
-              <CollectionRow key={view.collection.slug} view={view} index={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="coll-grid">
-            {filtered.map((view, i) => (
-              <CollectionCard key={view.collection.slug} view={view} index={i} />
-            ))}
-          </div>
-        )
+          {filtered.map((view, i) => (
+            <CollectionRow key={view.collection.slug} view={view} index={i} />
+          ))}
+        </div>
       ) : hasFilters ? (
         <EmptyState
           icon={<SlidersHorizontal size={18} />}

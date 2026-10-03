@@ -33,6 +33,49 @@ export function formatSol(lamports: number | string | bigint | null | undefined)
   return value === "—" ? value : `${value} SOL`;
 }
 
+/**
+ * lamports → SOL rounded (half-up, integer math) to at most `maxDecimals`
+ * fraction digits, trimming trailing zeros. Used for balances and other
+ * portfolio figures where 9 decimal places is noise. Exact values are
+ * preserved in the backend; only the presentation is shortened.
+ */
+export function lamportsToSolRounded(
+  lamports: number | string | bigint | null | undefined,
+  maxDecimals = 4
+): string {
+  if (lamports === null || lamports === undefined) return "—";
+  let value: bigint;
+  try {
+    value = BigInt(lamports);
+  } catch {
+    return "—";
+  }
+  const negative = value < ZERO;
+  if (negative) value = -value;
+  const digits = Math.max(0, Math.min(9, Math.floor(maxDecimals)));
+  const scale = 10n ** BigInt(9 - digits);
+  const scaled = (value + scale / 2n) / scale; // value rounded to `digits` places, ×10^digits
+  const unit = 10n ** BigInt(digits);
+  const whole = scaled / unit;
+  const remainder = scaled % unit;
+  if (remainder === 0n) return `${negative ? "-" : ""}${whole}`;
+  const fraction = remainder
+    .toString()
+    .padStart(digits, "0")
+    .replace(/0+$/, "");
+  const text = fraction ? `${whole}.${fraction}` : `${whole}`;
+  return negative ? `-${text}` : text;
+}
+
+/** Human-readable SOL amount with a trailing unit, e.g. "9.1917 SOL". */
+export function formatSolRounded(
+  lamports: number | string | bigint | null | undefined,
+  maxDecimals = 4
+): string {
+  const value = lamportsToSolRounded(lamports, maxDecimals);
+  return value === "—" ? value : `${value} SOL`;
+}
+
 /** Convert a user-entered SOL amount into integer lamports, or null if invalid. */
 export function solToLamports(input: string): bigint | null {
   const text = input.trim();
@@ -95,11 +138,24 @@ export function relativeTime(seconds: number | null | undefined): string | null 
 }
 
 const IMAGE_RE = /\.(png|jpe?g|webp|gif|svg|avif)(\?.*)?$/i;
+const BACKEND_IMAGE_RE = /^\/api\/(artwork|metadata)\//;
+
+/** Backend-relative paths (the metadata/artwork serving layer) need the API host. */
+function backendUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8788"
+  ).replace(/\/$/, "");
+}
 
 /** Resolve an artwork URL only when the URI genuinely points at an image. */
 export function resolveImageUrl(uri: string | null | undefined): string | null {
   if (!uri) return null;
   const value = uri.trim();
+  // The backend artwork endpoint (e.g. /api/artwork/<address>) is not an
+  // image-extension URL, so resolve it before the extension check.
+  if (BACKEND_IMAGE_RE.test(value)) {
+    return `${backendUrl()}${value}`;
+  }
   if (!IMAGE_RE.test(value)) return null;
   if (
     value.startsWith("http://") ||

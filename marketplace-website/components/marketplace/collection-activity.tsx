@@ -163,7 +163,7 @@ export function CollectionActivity({
                 ) : (
                   <span className={styles.assetName}>{name}</span>
                 )}
-                <span className={styles.assetSub}>{activityLabel(event.type)}</span>
+                <span className={styles.assetSub}>{activityLabel(event)}</span>
               </span>
             </span>
 

@@ -8,18 +8,23 @@ import { explorerAddressUrl } from "@/lib/solana/cluster";
 /**
  * Shortened Solana address with a copy action. Optionally links to the devnet
  * explorer. No keys, no signing.
+ *
+ * `self` marks the connected wallet's own address: it renders the plain word
+ * "You" with no copy affordance and no link — identity, not a target.
  */
 export function Address({
   value,
   head = 4,
   tail = 4,
   link = false,
+  self = false,
   className,
 }: {
   value: string | null | undefined;
   head?: number;
   tail?: number;
   link?: boolean;
+  self?: boolean;
   className?: string;
 }) {
   const [copied, setCopied] = useState(false);
@@ -30,6 +35,14 @@ export function Address({
     const t = setTimeout(() => setCopied(false), 1500);
     return () => clearTimeout(t);
   }, [copied]);
+
+  if (self) {
+    return (
+      <span className={className} style={{ color: "var(--text-strong)" }}>
+        You
+      </span>
+    );
+  }
 
   if (!value) return <span className={className}>—</span>;
 

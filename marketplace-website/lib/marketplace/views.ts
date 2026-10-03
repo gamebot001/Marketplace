@@ -233,27 +233,20 @@ export function filterListingViews(
   return result;
 }
 
-/** Human label for an activity event type, without inventing meaning. */
-export function activityLabel(type: string | null | undefined): string {
-  if (!type) return "Activity";
-  switch (type) {
-    case "mint":
-      return "Mint";
-    case "list":
-    case "listing":
-      return "List";
-    case "sale":
-      return "Sale";
-    case "cancel":
-    case "cancelled":
-      return "Cancel";
-    case "transfer":
-      return "Transfer";
-    case "observed_signature":
-      return "Chain event";
-    default:
-      return type.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  }
+/**
+ * Human label for an activity event. The backend resolves the semantic label
+ * (list→Listed, sale→Sold, …) and it is displayed verbatim; the fallback only
+ * title-cases an unexpected raw type and never invents marketplace meaning.
+ */
+export function activityLabel(event: {
+  type?: string | null;
+  label?: string | null;
+}): string {
+  if (event.label) return event.label;
+  if (!event.type) return "Activity";
+  return event.type
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /** The counterparty wallet for an activity event, when present. */

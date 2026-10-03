@@ -1,0 +1,25 @@
+[package]
+name = "zecians_marketplace"
+version = "0.1.0"
+description = "Zecians marketplace escrow program (Phase 1)"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "zecians_marketplace"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = "0.32.2"
+# mpl-core 0.11.x targets solana-program 2.x, matching Anchor 0.32's toolchain.
+# The `anchor` feature is intentionally NOT enabled: it would pull a second,
+# older anchor-lang. We only need the Core CPI builders + program id, and we
+# parse Core ownership ourselves (see core_asset.rs).
+mpl-core = { version = "0.11.2", default-features = false }

@@ -9,7 +9,7 @@ import {
   TransactionFailedError,
   TransactionRejectedError,
   type WalletSender,
-} from "@/lib/solana/transactions";
+} from "@/lib/solana/solana-confirmation";
 import { useWalletDialog } from "@/components/wallet/wallet-provider";
 
 export type FlowState = "review" | "submitting" | "success" | "error";
@@ -60,7 +60,7 @@ export function TransactionFlow({
   onConfirmed,
 }: TransactionFlowProps) {
   const { connection } = useConnection();
-  const { connected, sendTransaction } = useWallet();
+  const { connected, sendTransaction, publicKey } = useWallet();
   const { open: openWallet } = useWalletDialog();
 
   const [state, setState] = useState<FlowState>("review");
@@ -81,7 +81,7 @@ export function TransactionFlow({
   }, [onClose, state]);
 
   const submit = async () => {
-    if (!connected) {
+    if (!connected || !publicKey) {
       openWallet();
       return;
     }
@@ -89,6 +89,7 @@ export function TransactionFlow({
     setState("submitting");
     try {
       const sender: WalletSender = {
+        publicKey,
         sendTransaction: (tx, conn, options) =>
           sendTransaction(tx, conn, options),
       };

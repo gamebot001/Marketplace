@@ -61,10 +61,18 @@ export function ItemCard({
           </span>
         </div>
         <div className={c("row")}>
-          <span className={c("k")}>Price</span>
+          <span className={c("k")}>
+            {item.price === null ? "Status" : "Price"}
+          </span>
           <span className={c("v")}>
-            {item.price.toFixed(1)}
-            <small>SOL</small>
+            {item.price === null ? (
+              "Not listed"
+            ) : (
+              <>
+                {item.price.toFixed(1)}
+                <small>SOL</small>
+              </>
+            )}
           </span>
         </div>
       </div>

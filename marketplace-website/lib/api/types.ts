@@ -66,6 +66,21 @@ export interface MarketplaceAsset {
   description?: string | null;
   image?: string | null;
   attributes?: NftAttribute[] | null;
+  created_at?: number;
+  updated_at?: number;
+}
+
+export interface CollectionStats {
+  supply: number;
+  owners: number;
+  listed_count: number;
+  sales: number;
+  floor_lamports: number | null;
+  volume_lamports: number;
+  floor_change_24h: number | null;
+  volume_change_24h: number | null;
+  sales_change_24h: number | null;
+  listed_change_24h: number | null;
 }
 
 export interface MarketplaceCollection {
@@ -78,6 +93,7 @@ export interface MarketplaceCollection {
   marketplace_status: string;
   collection_address: string | null;
   chain_deployed: boolean;
+  creator_address?: string | null;
   royalty_bps?: number;
   website?: string | null;
   socials?: Record<string, string>;
@@ -92,6 +108,11 @@ export interface MarketplaceCollection {
   listed_change_24h?: number | null;
   flagship?: boolean;
   collection_id?: string;
+  /** Backend visibility rule: whether this collection belongs in the public
+      directory. Legacy/placeholder/undeployed collections are false. */
+  public_visible?: boolean;
+  /** Real roll-up computed by the backend from indexed assets/listings/sales. */
+  stats?: CollectionStats;
 }
 
 export interface MarketplaceConfig {
@@ -113,6 +134,8 @@ export interface ActivityEvent {
   slot: number;
   block_time: number | null;
   type: string;
+  /** Final human-readable label resolved by the backend (list→Listed etc.). */
+  label?: string | null;
   asset_address: string | null;
   collection_address: string | null;
   from_address: string | null;
@@ -147,6 +170,8 @@ export interface TreasuryResponse {
 export interface CollectionDetail {
   collection: MarketplaceCollection;
   asset_count: number;
+  assets?: MarketplaceAsset[];
+  listings?: MarketplaceListing[];
 }
 
 export interface ListingDetail {

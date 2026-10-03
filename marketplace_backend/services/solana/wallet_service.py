@@ -27,6 +27,24 @@ def _base58_decode(value: str) -> bytes:
     return b"\x00" * leading + body
 
 
+def encode_base58(raw: bytes) -> str:
+    """Base58-encode raw bytes (e.g. a 32-byte public key read from chain)."""
+    if not isinstance(raw, (bytes, bytearray)):
+        raise WalletError("encode_base58 expects bytes")
+    number = int.from_bytes(raw, "big")
+    out = []
+    while number:
+        number, remainder = divmod(number, 58)
+        out.append(_B58_ALPHABET[remainder])
+    leading = 0
+    for byte in raw:
+        if byte == 0:
+            leading += 1
+        else:
+            break
+    return "1" * leading + "".join(reversed(out))
+
+
 def is_valid_address(address: str) -> bool:
     """True iff `address` is a base58 string decoding to exactly 32 bytes."""
     if not isinstance(address, str):

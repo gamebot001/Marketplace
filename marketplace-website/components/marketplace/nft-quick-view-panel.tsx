@@ -16,7 +16,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ExternalLink,
-  HandCoins,
   Heart,
   ShoppingBag,
   Tag,
@@ -31,7 +30,7 @@ import { buildListingView } from "@/lib/marketplace/views";
 import { useAsset, useListingsWithAssets } from "@/lib/api/hooks";
 import { bpsToPercent, formatSol, relativeTime } from "@/lib/format";
 import { explorerAddressUrl } from "@/lib/solana/cluster";
-import { DEMO_MODE, DEMO_OFFERS } from "@/lib/demo-marketplace-data";
+import { DEMO_MODE } from "@/lib/demo-marketplace-data";
 import { NETWORK_LABEL } from "@/lib/config";
 import { Artwork } from "@/components/ui/artwork";
 import { VerifiedBadge, StatusBadge } from "@/components/ui/badges";
@@ -182,31 +181,33 @@ function QuickViewLayout({
   );
   const watchlisted = has(address);
 
+  // The current beneficial owner: the seller for an active listing, otherwise
+  // the asset owner. Shown once, and as "You" when it is the connected wallet.
+  const beneficialOwner = activeView
+    ? activeView.listing.seller_address
+    : asset?.owner_address ?? null;
+  const identityLabel = activeView ? (isSeller ? "Listed by" : "Seller") : "Owner";
+  const identityIsSelf = Boolean(
+    connectedAddress && beneficialOwner && connectedAddress === beneficialOwner
+  );
+  const creatorAddress =
+    asset?.creator_address ?? displayView?.creatorAddress ?? null;
+  // Creator is a separate relationship: suppress it when it is the same address
+  // as the current beneficial owner (it would be pure duplication).
+  const showCreator = Boolean(creatorAddress && creatorAddress !== beneficialOwner);
+
   const demoBlocked = (action: string) =>
     setDemoNotice(
       `${action} is disabled while demo data is active — this is a design preview with sample market data, not a real listing.`
     );
 
-  const demoNote = DEMO_MODE ? (
-    <button
-      type="button"
-      className="btn btn-outline btn-block"
-      onClick={() => demoBlocked("Make Offer")}
-    >
-      <HandCoins size={15} aria-hidden /> Make Offer
-    </button>
-  ) : null;
-
   const renderActions = () => {
     if (!activeView) {
       if (!connected) {
         return (
-          <>
-            <button className="btn btn-primary btn-block btn-lg" onClick={openWallet}>
-              <WalletIcon size={16} aria-hidden /> Connect to list
-            </button>
-            {demoNote}
-          </>
+          <button className="btn btn-primary btn-block btn-lg" onClick={openWallet}>
+            <WalletIcon size={16} aria-hidden /> Connect Wallet
+          </button>
         );
       }
       if (isOwner && asset) {
@@ -236,23 +237,17 @@ function QuickViewLayout({
         );
       }
       return (
-        <>
-          <button className="btn btn-outline btn-block btn-lg" disabled>
-            Not for sale
-          </button>
-          {demoNote}
-        </>
+        <button className="btn btn-outline btn-block btn-lg" disabled>
+          Not for sale
+        </button>
       );
     }
 
     if (!connected) {
       return (
-        <>
-          <button className="btn btn-primary btn-block btn-lg" onClick={openWallet}>
-            <WalletIcon size={16} aria-hidden /> Connect to buy
-          </button>
-          {demoNote}
-        </>
+        <button className="btn btn-primary btn-block btn-lg" onClick={openWallet}>
+          <WalletIcon size={16} aria-hidden /> Connect Wallet
+        </button>
       );
     }
     if (isSeller) {
@@ -302,28 +297,21 @@ function QuickViewLayout({
       );
     }
     return (
-      <div style={{ display: "grid", gap: 10 }}>
-        <button
-          className="btn btn-primary btn-block btn-lg"
-          onClick={() => {
-            if (DEMO_MODE) {
-              demoBlocked("Buy Now");
-            } else {
-              onClose();
-              request({ kind: "buy", view: activeView });
-            }
-          }}
-        >
-          <ShoppingBag size={16} aria-hidden /> Buy Now
-        </button>
-        {demoNote}
-      </div>
+      <button
+        className="btn btn-primary btn-block btn-lg"
+        onClick={() => {
+          if (DEMO_MODE) {
+            demoBlocked("Buy Now");
+          } else {
+            onClose();
+            request({ kind: "buy", view: activeView });
+          }
+        }}
+      >
+        <ShoppingBag size={16} aria-hidden /> Buy Now
+      </button>
     );
   };
-
-  const myOffers = DEMO_MODE
-    ? DEMO_OFFERS.filter((offer) => offer.asset === address)
-    : [];
 
   return (
     <OverlayPortal>
@@ -417,30 +405,18 @@ function QuickViewLayout({
                 )}
               </div>
 
-              {activeView && (
-                <div className="detail-row" style={{ padding: 0, borderBottom: 0 }}>
-                  <dt>Seller</dt>
-                  <dd>
-                    <Address
-                      value={activeView.listing.seller_address}
-                      head={5}
-                      tail={5}
-                      link
-                    />
-                  </dd>
-                </div>
-              )}
+              <div className="detail-row" style={{ padding: 0, borderBottom: 0 }}>
+                <dt>{identityLabel}</dt>
+                <dd>
+                  {identityIsSelf ? (
+                    <span style={{ color: "var(--text-strong)" }}>You</span>
+                  ) : (
+                    <Address value={beneficialOwner} head={5} tail={5} link />
+                  )}
+                </dd>
+              </div>
 
               {renderActions()}
-
-              {isOwner && (
-                <div
-                  className="mono"
-                  style={{ color: "var(--muted)", textAlign: "center" }}
-                >
-                  This asset is owned by your connected wallet.
-                </div>
-              )}
 
               <button
                 type="button"
@@ -459,25 +435,17 @@ function QuickViewLayout({
 
             <div className="attr-grid">
               <div className="attr">
-                <div className="k">Owner</div>
-                <div className="v">
-                  <Address value={asset?.owner_address ?? null} head={5} tail={5} link />
-                </div>
-              </div>
-              <div className="attr">
                 <div className="k">Standard</div>
                 <div className="v">{asset?.standard ?? displayView?.standard ?? "—"}</div>
               </div>
-              <div className="attr">
-                <div className="k">Creator</div>
-                <div className="v">
-                  <Address
-                    value={asset?.creator_address ?? displayView?.creatorAddress ?? null}
-                    head={5}
-                    tail={5}
-                  />
+              {showCreator ? (
+                <div className="attr">
+                  <div className="k">Creator</div>
+                  <div className="v">
+                    <Address value={creatorAddress} head={5} tail={5} />
+                  </div>
                 </div>
-              </div>
+              ) : null}
               <div className="attr">
                 <div className="k">Royalty</div>
                 <div className="v">{royalty ?? "None configured"}</div>
@@ -492,26 +460,6 @@ function QuickViewLayout({
                     <div className="attr" key={`${a.trait}-${a.value}`}>
                       <div className="k">{a.trait}</div>
                       <div className="v">{a.value}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {myOffers.length > 0 && (
-              <div style={{ display: "grid", gap: 10 }}>
-                <div className="eyebrow">Offers</div>
-                <div className="panel">
-                  {myOffers.map((offer) => (
-                    <div
-                      key={offer.id}
-                      className="detail-row"
-                      style={{ padding: "12px 14px" }}
-                    >
-                      <dt>
-                        <Address value={offer.from} head={4} tail={4} />
-                      </dt>
-                      <dd className="mono">{formatSol(offer.amountLamports)}</dd>
                     </div>
                   ))}
                 </div>

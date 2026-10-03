@@ -5,7 +5,7 @@ import { useConfig } from "@/lib/api/hooks";
 import { PROGRAM_CONFIGURED } from "@/lib/config";
 import { bpsToPercent, formatSol, solToLamports } from "@/lib/format";
 import { splitFees } from "@/lib/marketplace/fees";
-import { submitList } from "@/lib/solana/transactions";
+import { submitList } from "@/lib/solana/marketplace-listing";
 import { resolveImageUrl } from "@/lib/format";
 import type { MarketplaceAsset } from "@/lib/api/types";
 import { TransactionFlow } from "./flow-shell";
@@ -116,8 +116,8 @@ export function ListFlow({
         submitList(
           {
             assetAddress: asset.asset_address,
-            priceLamports: Number(breakdown.price),
-            currency: config?.fees.currency ?? "SOL",
+            collectionAddress: asset.collection_address,
+            priceLamports: breakdown.price,
           },
           sender,
           connection

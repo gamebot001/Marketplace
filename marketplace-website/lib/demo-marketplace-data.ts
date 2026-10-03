@@ -55,7 +55,8 @@ export const DEMO_WALLETS = [W1, W2, W3, W4, W5, W6, W7, W8, W9, W10];
 const SOL = 1_000_000_000;
 
 export interface DemoCollectionStats {
-  floorLamports: number;
+  /** Null when the collection has no active listing — never conflated with 0. */
+  floorLamports: number | null;
   volumeLamports: number;
   change24hPercent: number;
   supply: number;

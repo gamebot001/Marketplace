@@ -1,0 +1,31 @@
+[toolchain]
+anchor_version = "0.32.2"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.devnet]
+zecians_marketplace = "5E5HHbGwZbhmEcoRwBXArzoGqxX6Yh9ACPHET6EwnAwJ"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/zecians-deployer.json"
+
+[scripts]
+test = "npx tsx node_modules/mocha/bin/mocha -t 1000000 tests/**/*.ts"
+
+[test]
+startup_wait = 60000
+
+[test.validator]
+url = "https://api.devnet.solana.com"
+
+# The local test validator clones the real Metaplex Core program from Devnet so
+# list/buy/cancel can be exercised with actual Core assets.
+[[test.validator.clone]]
+address = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+

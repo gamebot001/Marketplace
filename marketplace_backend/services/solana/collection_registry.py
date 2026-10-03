@@ -22,6 +22,18 @@ class RegistryError(ValueError):
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
+# Collections intentionally excluded from the PUBLIC directory. They remain in
+# the registry — and their on-chain assets, ownership and history are left
+# untouched — so direct routes still resolve them, but they must never appear
+# in /collections, the Featured carousel, directory search or public counts.
+#
+#   · "zecians"             — the undeployed Phase 1 flagship placeholder.
+#   · "zecians-devnet-test" — the legacy Phase 1 test collection.
+#
+# Phase 2A public collections are the deployed Devnet set whose on-chain
+# address exists; a collection with no address has no real marketplace data.
+_PUBLIC_HIDDEN_SLUGS = ("zecians", "zecians-devnet-test")
+
 
 def normalize_slug(value: str) -> str:
     slug = (value or "").strip().lower()
@@ -61,7 +73,8 @@ def register_collection(store, name: str, slug: str, project_slug: str,
                         image: str = None, creator_address: str = None,
                         standard: str = m.STANDARD_METAPLEX_CORE,
                         website: str = None, socials: dict = None,
-                        royalty_bps: int = 0, now: int = None) -> dict:
+                        royalty_bps: int = 0, now: int = None,
+                        artwork_path: str = None) -> dict:
     slug = normalize_slug(slug)
     project_slug = normalize_slug(project_slug)
     if not name:
@@ -87,6 +100,7 @@ def register_collection(store, name: str, slug: str, project_slug: str,
             "collection_address": collection_address,
             "description": description,
             "image": image,
+            "artwork_path": artwork_path,
             "creator_address": creator_address,
             "verification_status": m.VERIFICATION_PENDING,
             "standard": standard,
@@ -132,13 +146,59 @@ def set_marketplace_status(store, slug: str, status: str) -> dict:
     return store.update(mutate)["collections"][slug]
 
 
+def set_collection_media(store, slug: str, image: str = None,
+                         artwork_path: str = None) -> dict:
+    """Attach (or replace) the collection PFP image + local artwork path."""
+    slug = normalize_slug(slug)
+
+    def mutate(data):
+        collection = data.get("collections", {}).get(slug)
+        if collection is None:
+            raise KeyError("unknown collection %s" % slug)
+        if image is not None:
+            collection["image"] = image
+        if artwork_path is not None:
+            collection["artwork_path"] = artwork_path
+        return data
+
+    return store.update(mutate)["collections"][slug]
+
+
 def get_collection(store, slug: str):
     return store.get("collections", {}).get(normalize_slug(slug))
+
+
+def get_collection_by_address(store, collection_address: str):
+    if not collection_address:
+        return None
+    for collection in store.get("collections", {}).values():
+        if collection.get("collection_address") == collection_address:
+            return collection
+    return None
 
 
 def list_collections(store) -> list:
     collections = list(store.get("collections", {}).values())
     return sorted(collections, key=lambda c: (c.get("created_at") or 0, c["slug"]))
+
+
+def is_publicly_visible(collection: dict) -> bool:
+    """Whether a collection belongs in the PUBLIC marketplace directory.
+
+    An explicit `public_visible` on the record always wins. Legacy/placeholder
+    collections are otherwise hidden by slug, and a collection with no on-chain
+    address (no real assets or marketplace data) is not part of the directory.
+    """
+    if not collection:
+        return False
+    explicit = collection.get("public_visible")
+    if explicit is True:
+        return True
+    if explicit is False:
+        return False
+    if collection.get("slug") in _PUBLIC_HIDDEN_SLUGS:
+        return False
+    return bool(collection.get("collection_address"))
 
 
 def seed_flagship_collection(store, collection_dir=None, now: int = None) -> dict:
@@ -186,7 +246,14 @@ def seed_flagship_collection(store, collection_dir=None, now: int = None) -> dic
 
     def mutate(data):
         data["collections"]["zecians"].update(
-            {"collection_id": collection_id, "supply": supply, "flagship": True}
+            {
+                "collection_id": collection_id,
+                "supply": supply,
+                "flagship": True,
+                # The undeployed flagship placeholder is not part of the public
+                # directory; this is an explicit backend visibility decision.
+                "public_visible": False,
+            }
         )
         return data
 

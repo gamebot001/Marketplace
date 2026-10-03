@@ -3410,15 +3410,38 @@ p {
   z-index: 200;
   pointer-events: none;
 }
+/* The section label is an intentional eyebrow that anchors the deck to the
+   Featured section — readable, properly spaced, and clearly secondary to the
+   artwork itself. */
+.coll-deck-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 15px;
+  border: 1px solid var(--line-accent);
+  border-radius: 999px;
+  background: var(--surface-2);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+.coll-deck-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+}
 .coll-deck-count {
   font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: var(--faint);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
 }
 .coll-deck-count b {
-  color: var(--accent-bright);
+  color: var(--text-strong);
   font-weight: 600;
 }
 .coll-deck-arrows {
@@ -3478,31 +3501,6 @@ p {
     transparent 74%
   );
   will-change: transform;
-}
-
-/* routing toast for a card click */
-.coll-deck-toast {
-  position: absolute;
-  left: 50%;
-  bottom: 22px;
-  transform: translateX(-50%) translateY(14px);
-  padding: 9px 18px;
-  border-radius: 999px;
-  background: var(--surface-2);
-  border: 1px solid var(--line-accent);
-  color: var(--accent-bright);
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 260ms var(--ease), transform 260ms var(--ease-lux);
-  z-index: 200;
-}
-.coll-deck-toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
 }
 
 .coll-deck-track {
@@ -3764,8 +3762,7 @@ p {
   .coll-deck-card,
   .coll-deck-pfp,
   .coll-deck-pfp img,
-  .coll-deck-cta,
-  .coll-deck-toast {
+  .coll-deck-cta {
     transition: none !important;
   }
 }
@@ -3776,45 +3773,6 @@ p {
 .coll-controls {
   width: 100%;
   gap: 12px;
-}
-/* view switch — a compact segmented control sitting just before the search
-   field; list is the default, compact is the alternate scan of the same data */
-.coll-viewswitch {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  flex: none;
-  height: 40px;
-  padding: 3px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-2);
-}
-.coll-viewswitch button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 32px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--faint);
-  cursor: pointer;
-  transition: color var(--dur) var(--ease), background var(--dur) var(--ease),
-    box-shadow var(--dur) var(--ease);
-}
-.coll-viewswitch button:hover {
-  color: var(--text-strong);
-  background: rgba(255, 255, 255, 0.045);
-}
-.coll-viewswitch button[aria-pressed="true"] {
-  color: var(--accent-bright);
-  background: var(--accent-soft);
-}
-.coll-viewswitch button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .coll-controls .mkt-search {
   flex: 1 1 320px;
@@ -4296,245 +4254,6 @@ p {
   justify-self: end;
 }
 
-/* --- compact directory (alternate view) ---------------------------------- */
-
-/* The same directory, scanned as a two-column field of compact horizontal
-   identity tiles. Each tile keeps the full identity cluster, favourite,
-   navigation and the five real metrics — no artwork panel, no tall card. */
-.coll-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  animation: collViewIn 320ms var(--ease) both;
-}
-@keyframes collViewIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-.coll-card {
-  position: relative;
-  display: block;
-  padding: 14px 16px 15px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: rgba(24, 20, 16, 0.45);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35), 0 14px 30px -24px rgba(0, 0, 0, 0.9);
-  overflow: hidden;
-  animation: collTileIn 460ms var(--ease-lux) both;
-  animation-delay: calc(min(var(--i, 0), 12) * 50ms);
-  transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease),
-    background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
-}
-/* the amber highlight travels softly across the active edge on hover only */
-.coll-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    104deg,
-    rgba(232, 161, 60, 0.12),
-    rgba(232, 161, 60, 0.03) 42%,
-    transparent 74%
-  );
-  opacity: 0;
-  transform: scaleX(0.72);
-  transform-origin: left center;
-  transition: opacity var(--dur) var(--ease), transform 440ms var(--ease-lux);
-}
-.coll-card:hover,
-.coll-card:has(.coll-card-hit:focus-visible) {
-  transform: translateY(-3px);
-  border-color: rgba(232, 161, 60, 0.4);
-  background: rgba(30, 25, 19, 0.55);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 22px 40px -26px rgba(0, 0, 0, 0.95);
-}
-.coll-card:hover::before,
-.coll-card:has(.coll-card-hit:focus-visible)::before {
-  opacity: 1;
-  transform: scaleX(1);
-}
-@keyframes collTileIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-.coll-card-hit {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  border-radius: 14px;
-  outline: none;
-}
-.coll-card > *:not(.coll-card-hit) {
-  position: relative;
-  z-index: 2;
-  pointer-events: none;
-}
-.coll-card-body {
-  display: grid;
-  gap: 13px;
-}
-.coll-card-top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-.coll-card-pfp {
-  flex: none;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  background: linear-gradient(160deg, #1b1713, #0e0c0a);
-  transition: transform 380ms var(--ease), border-color var(--dur) var(--ease);
-}
-.coll-card:hover .coll-card-pfp,
-.coll-card:has(.coll-card-hit:focus-visible) .coll-card-pfp {
-  transform: scale(1.03);
-  border-color: rgba(232, 161, 60, 0.5);
-}
-.coll-card-pfp .media-fallback {
-  font-size: 10px;
-  letter-spacing: 0.08em;
-}
-.coll-card-ident {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-.coll-card-name {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 15.5px;
-  letter-spacing: -0.012em;
-  line-height: 1;
-  color: var(--text-strong);
-  transition: color var(--dur) var(--ease);
-}
-.coll-card-name .nm {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.coll-card:hover .coll-card-name,
-.coll-card:has(.coll-card-hit:focus-visible) .coll-card-name {
-  color: #fff;
-}
-.coll-card-check {
-  flex: none;
-  align-self: center;
-  color: var(--accent);
-}
-.coll-card-fav-slot {
-  position: relative;
-  z-index: 3;
-  flex: none;
-  display: inline-flex;
-  pointer-events: auto;
-}
-.coll-card-arrow {
-  flex: none;
-  display: inline-flex;
-  color: var(--faint);
-  opacity: 0.7;
-  transition: transform var(--dur) var(--ease), color var(--dur) var(--ease),
-    opacity var(--dur) var(--ease);
-}
-.coll-card:hover .coll-card-arrow,
-.coll-card:has(.coll-card-hit:focus-visible) .coll-card-arrow {
-  color: var(--accent);
-  opacity: 1;
-  transform: translateX(3px);
-}
-.coll-card-metrics {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 4px 14px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-.coll-card-metric {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-.coll-card-k {
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  color: var(--faint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.coll-card-v {
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-strong);
-  white-space: nowrap;
-}
-.coll-card-metrics .coll-row-change {
-  font-size: 11px;
-}
-.coll-card-fav {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--faint);
-  cursor: pointer;
-  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease),
-    background var(--dur) var(--ease), transform 260ms var(--ease-lux);
-}
-.coll-card-fav:hover {
-  color: #f2a89a;
-  border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.03);
-  transform: scale(1.06);
-}
-.coll-card-fav[aria-pressed="true"] {
-  color: var(--accent-bright);
-}
-.coll-card-fav[aria-pressed="true"]:hover {
-  border-color: var(--accent-line);
-  background: var(--accent-soft);
-}
-.coll-card-fav:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-.coll-card-fav-empty {
-  width: 30px;
-  height: 30px;
-}
-
 /* --- responsive ---------------------------------------------------------- */
 
 @media (max-width: 1120px) {
@@ -4547,9 +4266,6 @@ p {
   .coll-row-stats {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 12px;
-  }
-  .coll-card-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -4627,16 +4343,6 @@ p {
   .coll-controls-end .mkt-sort {
     flex: 1 1 100%;
     width: 100%;
-  }
-  .coll-grid {
-    grid-template-columns: 1fr;
-  }
-  .coll-card-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .coll-card-metric[data-rank="3"],
-  .coll-card-metric[data-rank="4"] {
-    display: none;
   }
   .coll-row {
     column-gap: 10px;

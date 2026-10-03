@@ -1,0 +1,840 @@
+{
+  "address": "5E5HHbGwZbhmEcoRwBXArzoGqxX6Yh9ACPHET6EwnAwJ",
+  "metadata": {
+    "name": "zecians_marketplace",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Zecians marketplace escrow program (Phase 1)"
+  },
+  "docs": [
+    "Zecians marketplace — Phase 1 escrow listing program.",
+    "",
+    "Architecture (locked): a Metaplex Core asset is transferred into the listing",
+    "PDA on `create_listing`, making the PDA the real on-chain owner (escrow).",
+    "`buy_nft` settles SOL and the asset atomically, `cancel_listing` returns the",
+    "asset to the seller. Only the four Phase 1 instructions exist."
+  ],
+  "instructions": [
+    {
+      "name": "buy_nft",
+      "discriminator": [
+        96,
+        0,
+        28,
+        190,
+        49,
+        107,
+        83,
+        222
+      ],
+      "accounts": [
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "marketplace",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116,
+                  112,
+                  108,
+                  97,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "writable": true
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "marketplace"
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ]
+          }
+        },
+        {
+          "name": "seller",
+          "writable": true
+        },
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "mpl_core_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "collection",
+          "writable": true,
+          "optional": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "cancel_listing",
+      "discriminator": [
+        41,
+        183,
+        50,
+        232,
+        230,
+        233,
+        157,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "seller",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "marketplace",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116,
+                  112,
+                  108,
+                  97,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "writable": true
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "marketplace"
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mpl_core_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "collection",
+          "writable": true,
+          "optional": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_listing",
+      "discriminator": [
+        18,
+        168,
+        45,
+        24,
+        191,
+        31,
+        117,
+        54
+      ],
+      "accounts": [
+        {
+          "name": "seller",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "marketplace",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116,
+                  112,
+                  108,
+                  97,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "docs": [
+            "data in the handler before any transfer."
+          ],
+          "writable": true
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "marketplace"
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mpl_core_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "collection",
+          "docs": [
+            "the last account because it is optional."
+          ],
+          "writable": true,
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "price_lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_marketplace",
+      "discriminator": [
+        47,
+        81,
+        64,
+        0,
+        96,
+        56,
+        105,
+        7
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "marketplace",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116,
+                  112,
+                  108,
+                  97,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "docs": [
+            "signing wallet. Stored verbatim in the marketplace account."
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "marketplace_fee_bps",
+          "type": "u16"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Listing",
+      "discriminator": [
+        218,
+        32,
+        50,
+        73,
+        43,
+        134,
+        26,
+        58
+      ]
+    },
+    {
+      "name": "Marketplace",
+      "discriminator": [
+        70,
+        222,
+        41,
+        62,
+        78,
+        3,
+        32,
+        174
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ListingCancelled",
+      "discriminator": [
+        11,
+        46,
+        163,
+        10,
+        103,
+        80,
+        139,
+        194
+      ]
+    },
+    {
+      "name": "ListingCreated",
+      "discriminator": [
+        94,
+        164,
+        167,
+        255,
+        246,
+        186,
+        12,
+        96
+      ]
+    },
+    {
+      "name": "MarketplaceInitialized",
+      "discriminator": [
+        22,
+        167,
+        42,
+        34,
+        172,
+        55,
+        155,
+        14
+      ]
+    },
+    {
+      "name": "NftSold",
+      "discriminator": [
+        82,
+        21,
+        49,
+        86,
+        87,
+        54,
+        132,
+        103
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MarketplacePaused",
+      "msg": "The marketplace is paused."
+    },
+    {
+      "code": 6001,
+      "name": "ListingNotFound",
+      "msg": "The listing was not found."
+    },
+    {
+      "code": 6002,
+      "name": "ListingNotActive",
+      "msg": "The listing is not active."
+    },
+    {
+      "code": 6003,
+      "name": "UnauthorizedSeller",
+      "msg": "Only the seller may perform this action."
+    },
+    {
+      "code": 6004,
+      "name": "InvalidAsset",
+      "msg": "The provided asset does not match the listing."
+    },
+    {
+      "code": 6005,
+      "name": "AssetNotEscrowed",
+      "msg": "The asset is not held in escrow by the listing."
+    },
+    {
+      "code": 6006,
+      "name": "AssetNotOwned",
+      "msg": "The signer does not own the asset."
+    },
+    {
+      "code": 6007,
+      "name": "PriceMismatch",
+      "msg": "The provided price does not match the listing."
+    },
+    {
+      "code": 6008,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient funds for this transaction."
+    },
+    {
+      "code": 6009,
+      "name": "InvalidMarketplace",
+      "msg": "The marketplace account is invalid."
+    },
+    {
+      "code": 6010,
+      "name": "InvalidTreasury",
+      "msg": "The treasury account is invalid."
+    },
+    {
+      "code": 6011,
+      "name": "TradingDisabled",
+      "msg": "Trading is currently disabled."
+    },
+    {
+      "code": 6012,
+      "name": "BuyDisabled",
+      "msg": "Buying is currently disabled."
+    },
+    {
+      "code": 6013,
+      "name": "ListingDisabled",
+      "msg": "Listing is currently disabled."
+    },
+    {
+      "code": 6014,
+      "name": "AlreadySettled",
+      "msg": "This listing has already been settled."
+    },
+    {
+      "code": 6015,
+      "name": "InvalidFee",
+      "msg": "The marketplace fee is invalid."
+    },
+    {
+      "code": 6016,
+      "name": "SelfPurchaseNotAllowed",
+      "msg": "Buyer and seller must be different accounts."
+    },
+    {
+      "code": 6017,
+      "name": "InvalidPrice",
+      "msg": "The price must be greater than zero."
+    },
+    {
+      "code": 6018,
+      "name": "InvalidCollection",
+      "msg": "The asset does not belong to the provided collection."
+    },
+    {
+      "code": 6019,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow or underflow."
+    }
+  ],
+  "types": [
+    {
+      "name": "Listing",
+      "docs": [
+        "A per-asset escrow listing. The listing PDA itself becomes the owner of the",
+        "Metaplex Core asset while `status == Active`, which is what makes the escrow",
+        "real on-chain rather than a database flag."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "collection",
+            "docs": [
+              "Optional Metaplex Core collection the asset belongs to."
+            ],
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "price_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "ListingStatus"
+              }
+            }
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ListingCancelled",
+      "docs": [
+        "Emitted when the seller reclaims an escrowed asset."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "listing",
+            "type": "pubkey"
+          },
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ListingCreated",
+      "docs": [
+        "Emitted when a Core asset has been escrowed and a listing becomes Active."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "listing",
+            "type": "pubkey"
+          },
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "price_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ListingStatus",
+      "docs": [
+        "Listing lifecycle. Phase 1 only needs these four states; expiry is not",
+        "implemented."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pending"
+          },
+          {
+            "name": "Active"
+          },
+          {
+            "name": "Sold"
+          },
+          {
+            "name": "Cancelled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Marketplace",
+      "docs": [
+        "Phase 1 marketplace configuration. Deliberately small: only the switches",
+        "and fee that the escrow listing flow actually needs."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Platform authority that initialised the marketplace."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "docs": [
+              "Public key that receives marketplace fees. Never a signing wallet."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "marketplace_fee_bps",
+            "docs": [
+              "Marketplace fee in basis points. Integer lamports settlement only."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "listing_enabled",
+            "docs": [
+              "When false, new listings are refused."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "buy_enabled",
+            "docs": [
+              "When false, purchases are refused."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "paused",
+            "docs": [
+              "Global kill switch."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketplaceInitialized",
+      "docs": [
+        "Emitted once when the marketplace configuration account is created."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "marketplace_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "NftSold",
+      "docs": [
+        "Emitted when the atomic settlement succeeds and the asset moves to the buyer."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "listing",
+            "type": "pubkey"
+          },
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "price_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "fee_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "seller_proceeds_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ]
+}

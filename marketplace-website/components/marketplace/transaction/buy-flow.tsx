@@ -4,7 +4,7 @@ import { useConfig } from "@/lib/api/hooks";
 import { PROGRAM_CONFIGURED } from "@/lib/config";
 import { bpsToPercent, formatSol } from "@/lib/format";
 import { splitFees } from "@/lib/marketplace/fees";
-import { submitBuy } from "@/lib/solana/transactions";
+import { submitBuy } from "@/lib/solana/marketplace-buying";
 import { Artwork } from "@/components/ui/artwork";
 import { VerifiedBadge } from "@/components/ui/badges";
 import type { ListingView } from "@/lib/marketplace/views";
@@ -76,8 +76,7 @@ export function BuyFlow({
           {
             assetAddress: view.listing.asset_address,
             sellerAddress: view.listing.seller_address,
-            priceLamports: view.listing.price_lamports,
-            currency: view.listing.currency,
+            collectionAddress: view.listing.collection_address,
           },
           sender,
           connection

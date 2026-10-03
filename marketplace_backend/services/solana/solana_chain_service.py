@@ -60,6 +60,22 @@ class SolanaChainService:
         pubkey = wallet_service.validate(address)
         return self._call("getAccountInfo", [pubkey, {"encoding": encoding}])
 
+    def get_transaction(self, signature: str):
+        """Fetch a confirmed transaction (logs + meta) for event extraction."""
+        if not signature:
+            raise SolanaRpcError("a signature is required to fetch a transaction")
+        return self._call(
+            "getTransaction",
+            [
+                signature,
+                {
+                    "encoding": "json",
+                    "maxSupportedTransactionVersion": 0,
+                    "commitment": "confirmed",
+                },
+            ],
+        )
+
     def get_signatures_for_address(self, address: str, limit: int = 25):
         """Recent signatures for an address (read-only observation feed)."""
         pubkey = wallet_service.validate(address)
